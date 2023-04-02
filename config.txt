@@ -1,0 +1,3 @@
+[paths]
+library = /Music/_Serato_
+music = /Music/Crates
