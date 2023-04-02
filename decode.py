@@ -1,34 +1,50 @@
+import configparser
 import os
-from os.path import basename, splitext, join
 import re
 import struct
 
-library = '/Users/dave/Music/_Serato_'
-music = '/Users/dave/Music/Crates'
+homedir = os.path.expanduser('~')
 
-file = library + '/Subcrates/Temp.crate'
+config = configparser.ConfigParser()
+config.read('config.txt')
+library = homedir + config['paths']['library']
+music = homedir + config['paths']['music']
 
-with open(file, 'rb') as f:
-  file_contents = f.read()
+# Get a list of all crate files
+def getcrates():
+  crates = []
+  for root, dirs, files in os.walk(library + '/Subcrates'):
+    files.sort()
+    for file in files:
+      if file.endswith('.crate'):
+        crates.append(os.path.join(root, file))
+  return(crates)
 
+# Convert crate file data into lines of key, value
 def decode(data):
   result = []
   i = 0
   while i < len(data):
-    key = data[i:i+4].decode('utf-8')
-    length = struct.unpack('>I', data[i+4:i+8])[0]  # 56
-    binary = data[i+8:i+8+length]
     try:
-      if re.match('osrt', key):
+      key = data[i:i+4].decode('utf-8')
+      length = struct.unpack('>I', data[i+4:i+8])[0]
+      binary = data[i+8:i+8 + length]
+      if re.match('osrt|ovct|otrk', key):
         value = decode(binary)
-      elif key == 'brev':
-        pass
+        result.append((key, value))
+      elif re.match('brev', key):
+        if binary == b'\x00':
+          value = ''
+        else:
+          value = decode(binary)
+        result.append((key, value))
       else:
         value = binary.decode('utf-16-be')
+        result.append((key, value))
+      i += 8 + length
     except:
-      print('\nERROR: i is {}\nkey is {}\nbinary is {}\n\n'.format(i, key, binary))
-    result.append((key, value))
-    i += 8 + length
+      print('ERROR: i: {}, key: {}, length: {}, binary: {}, value: {}'.format(i, key, length, binary, value))
+      break
   return(result)
 
-data = decode(file_contents)
+decode(data)

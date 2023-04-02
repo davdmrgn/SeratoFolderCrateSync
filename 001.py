@@ -49,9 +49,3 @@ with open(file, 'rb') as f:
   file_contents = f.read()
 
 decode(file_contents)
-
-data[i:i+4]
-length = struct.unpack('>I', data[i+4:i+8])[0]
-length
-i += 8 + length
-i
