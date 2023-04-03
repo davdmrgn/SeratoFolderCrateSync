@@ -47,4 +47,4 @@ def decode(data):
       break
   return(result)
 
-decode(data)
+#decode(data)

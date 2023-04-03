@@ -1,14 +1,62 @@
+#!/usr/bin/env python3
+
 import configparser
 import os
 import re
 import struct
+from datetime import datetime
+import logging
 
+# Paths
 homedir = os.path.expanduser('~')
-
 config = configparser.ConfigParser()
 config.read('config.txt')
 library = homedir + config['paths']['library']
 music = homedir + config['paths']['music']
+
+# Logging
+now = datetime.now()
+logfile = '{}/Logs/SeratoCrateFolderSync-{}-{}-{}.log'.format(library, str(now.year), str(now.month), str(now.day))
+logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+logging.getLogger('').addHandler(console)
+logging.debug('Session start')
+
+def startApp():
+  print()
+  print('╔══════════════════════════════════════════════════════════════════╗')
+  print('║                     Serato Crate Folder Sync                     ║')
+  print('╚══════════════════════════════════════════════════════════════════╝')
+  print()
+  if os.path.exists(library):
+    logging.info('\tSerato Database:   ' + library)
+  else:
+    logging.error('\tSerato Database:   ' + ' - NOT FOUND')
+  if os.path.exists(music):
+    logging.info('\tMusic Library:   ' + music)
+  else:
+    logging.error('\tMusic Library:   ' + ' - NOT FOUND')
+  if os.path.exists('config.txt'):
+    logging.info('\tConfiguration File:   ' + 'config.txt')
+  else:
+    logging.error('\tConfiguration File:   ' + ' - NOT FOUND')
+  if os.path.exists(logfile):
+    logging.info('\tLog File:   ' + logfile)
+  else:
+    logging.error('\tLog File:   ' + ' - NOT FOUND')
+  print()
+  mainmenu()
+
+def mainmenu():
+  print()
+  print('S. Synchronize music folders to Serato crates')
+  print()
+  print('Q. Quit')
+  menu = str(input('\nSelect an option: ').lower())
+  if menu == 's':
+    buildcrates()
+  logging.debug('Session end')
 
 def encode(data):
   result = b''
@@ -28,7 +76,8 @@ def encode(data):
       result += (key + length + value)
       i += 1
     except:
-      print('ERROR: i: {}, key: {}, length: {}, value: {}'.format(i, key, length, value))
+      #print('ERROR: i: {}, key: {}, length: {}, value: {}'.format(i, key, length, value))
+      logging.error('ERROR: i: {}, key: {}, length: {}, value: {}'.format(i, key, length, value))
       break
   return(result)
 
@@ -45,10 +94,11 @@ def buildcrates():
     for file in files:
       if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
         file_path = os.path.join(root[1:], file)
-        print('Adding {} to crate {}'.format(file_path, crate_name))
+        #print('Adding {} to crate {}'.format(file_path, crate_name))
+        logging.info('Adding {} to crate {}'.format(file_path, crate_name))
         crate_data += encode([('otrk', [('ptrk', file_path)])])
     if len(crate_data) > 0:
       with open(crate_path, 'wb') as crate_file:
         crate_file.write(crate_data)
 
-buildcrates()
+startApp()
