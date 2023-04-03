@@ -21,17 +21,19 @@ def encode(data):
 i = 0
 x = b''
 for line in data:
-  key = line[0].encode('utf-8')
-  if isinstance(line[1], list):
-    value = encode(line[1][0])
+  try:
+    key = line[0].encode('utf-8')
+    if isinstance(line[1], list):
+      value = encode(line[1][0])
+    else:
+      value = line[1].encode('utf-16-be')
     length = struct.pack('>I', len(value))
     x += (key + length + value)
-  else:
-    value = line[1].encode('utf-16-be')
-    length = struct.pack('>I', len(value))
-    x += (key + length + value)
-  i += 1
+    i += 1
+  except:
+    print('ERROR: i: {}, key: {}, length: {}, value: {}'.format(i, key, length, value))
+    break
 
-file = library + '/Subcrates/This better work.crate'
+file = library + '/Subcrates/This better work2.crate'
 with open(file, 'wb') as crate:
   crate.write(x)
