@@ -146,4 +146,9 @@ def timer(sec):
     time.sleep(1)
     sec -= 1
 
+def backup():
+  now = datetime()
+  os.makedirs(library + 'Backups/' + '_Serato_{}-{}-{}'.format(now.year, ))
+  pass
+
 startApp()
