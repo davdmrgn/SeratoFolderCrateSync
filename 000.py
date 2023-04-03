@@ -51,3 +51,29 @@ while i < len(data):
   
 print(result)
 
+
+def encode(data):
+  key = data[0].encode('utf-8')
+  value = data[1].encode('utf-16-be')
+  length = struct.pack('>I', len(value))
+  return(key + length + value)
+
+# encode
+i = 0
+x = b''
+for line in d:
+  key = line[0].encode('utf-8')
+  if isinstance(line[1], list):
+    value = encode(line[1][0])
+    length = struct.pack('>I', len(value))
+    x += (key + length + value)
+  else:
+    value = line[1].encode('utf-16-be')
+    length = struct.pack('>I', len(value))
+    x += (key + length + value)
+  i += 1
+
+
+file = library + '/Subcrates/This better work.crate'
+with open(file, 'wb') as crate:
+  crate.write(x)
