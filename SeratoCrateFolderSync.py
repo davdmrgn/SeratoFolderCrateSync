@@ -4,6 +4,7 @@ import configparser
 import os
 import re
 import struct
+import time
 from datetime import datetime
 import logging
 
@@ -120,6 +121,7 @@ def encode(data):
 
 # Make new crate from scratch
 def buildcrates():
+  timer(5)
   for root, dirs, files in os.walk(music):
     crate_name = root.replace(music, os.path.basename(music)).replace('/', '%%') + '.crate'
     crate_path = os.path.join(library + '/Subcrates/' + crate_name)
@@ -137,5 +139,11 @@ def buildcrates():
     if len(crate_data) > 0:
       with open(crate_path, 'wb') as crate_file:
         crate_file.write(crate_data)
+
+def timer(sec):
+  while sec:
+    print('...{}'.format(sec), end='\r')
+    time.sleep(1)
+    sec -= 1
 
 startApp()
