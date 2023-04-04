@@ -128,10 +128,10 @@ def encode(data):
 
 # Make new crate from scratch
 def buildcrates():
-  logging.info('Synchronizing folders to crates')
-  timer('', 5)
   try:
     backup()
+    logging.info('Synchronizing folders to crates')
+    timer('', 5)
     for root, dirs, files in os.walk(music):
       crate_name = root.replace(music, os.path.basename(music)).replace('/', '%%') + '.crate'
       crate_path = os.path.join(library + '/Subcrates/' + crate_name)
