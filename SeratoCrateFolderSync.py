@@ -7,6 +7,7 @@ import struct
 import time
 from datetime import datetime
 import logging
+import shutil
 
 # Paths
 homedir = os.path.expanduser('~')
@@ -57,6 +58,10 @@ def mainmenu():
   menu = str(input('\nSelect an option: ').lower())
   if menu == 's':
     buildcrates()
+  elif menu == 'q':
+    quit()
+  else:
+    startApp()
   logging.debug('Session end')
 
 # Get a list of all crate files
@@ -69,7 +74,7 @@ def getcrates():
         crates.append(os.path.join(root, file))
   return(crates)
 
-# Convert crate file data into lines of key, value
+# Convert crate file data into lines of key, value - for future use
 def decode(data):
   result = []
   i = 0
@@ -96,6 +101,7 @@ def decode(data):
       break
   return(result)
 
+# Convert plain text list to binary crate file
 def encode(data):
   result = b''
   i = 0
@@ -121,34 +127,46 @@ def encode(data):
 
 # Make new crate from scratch
 def buildcrates():
-  timer(5)
-  for root, dirs, files in os.walk(music):
-    crate_name = root.replace(music, os.path.basename(music)).replace('/', '%%') + '.crate'
-    crate_path = os.path.join(library + '/Subcrates/' + crate_name)
-    crate_data = b''
-    crate_data += encode([('vrsn', '1.0/Serato ScratchLive Crate')])
-    crate_data += encode([('osrt', [('tvcn', 'song'), ('brev', '')])])
-    crate_data += encode([('ovct', [('tvcn', 'song'), ('tvcw', '0')]), ('ovct', [('tvcn', 'artist'), ('tvcw', '0')]), ('ovct', [('tvcn', 'bpm'), ('tvcw', '0')]), ('ovct', [('tvcn', 'key'), ('tvcw', '0')]), ('ovct', [('tvcn', 'year'), ('tvcw', '0')]), ('ovct', [('tvcn', 'grouping'), ('tvcw', '0')]), ('ovct', [('tvcn', 'bitrate'), ('tvcw', '0')]), ('ovct', [('tvcn', 'undef'), ('tvcw', '0')]), ('ovct', [('tvcn', 'added'), ('tvcw', '0')]), ('ovct', [('tvcn', 'composer'), ('tvcw', '0')]), ('ovct', [('tvcn', 'comment'), ('tvcw', '0')]), ('ovct', [('tvcn', 'location'), ('tvcw', '0')]), ('ovct', [('tvcn', 'filename'), ('tvcw', '0')]), ('ovct', [('tvcn', 'genre'), ('tvcw', '0')]), ('ovct', [('tvcn', 'album'), ('tvcw', '0')]), ('ovct', [('tvcn', 'label'), ('tvcw', '0')])])
-    files.sort()
-    for file in files:
-      if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
-        file_path = os.path.join(root[1:], file)
-        #print('Adding {} to crate {}'.format(file_path, crate_name))
-        logging.info('Adding {} to crate {}'.format(file_path, crate_name))
-        crate_data += encode([('otrk', [('ptrk', file_path)])])
-    if len(crate_data) > 0:
-      with open(crate_path, 'wb') as crate_file:
-        crate_file.write(crate_data)
+  logging.info('Synchronizing folders to crates')
+  timer('', 5)
+  try:
+    backup()
+    for root, dirs, files in os.walk(music):
+      crate_name = root.replace(music, os.path.basename(music)).replace('/', '%%') + '.crate'
+      crate_path = os.path.join(library + '/Subcrates/' + crate_name)
+      crate_data = b''
+      crate_data += encode([('vrsn', '1.0/Serato ScratchLive Crate')])
+      crate_data += encode([('osrt', [('tvcn', 'song'), ('brev', '')])])
+      crate_data += encode([('ovct', [('tvcn', 'song'), ('tvcw', '0')]), ('ovct', [('tvcn', 'artist'), ('tvcw', '0')]), ('ovct', [('tvcn', 'bpm'), ('tvcw', '0')]), ('ovct', [('tvcn', 'key'), ('tvcw', '0')]), ('ovct', [('tvcn', 'year'), ('tvcw', '0')]), ('ovct', [('tvcn', 'grouping'), ('tvcw', '0')]), ('ovct', [('tvcn', 'bitrate'), ('tvcw', '0')]), ('ovct', [('tvcn', 'undef'), ('tvcw', '0')]), ('ovct', [('tvcn', 'added'), ('tvcw', '0')]), ('ovct', [('tvcn', 'composer'), ('tvcw', '0')]), ('ovct', [('tvcn', 'comment'), ('tvcw', '0')]), ('ovct', [('tvcn', 'location'), ('tvcw', '0')]), ('ovct', [('tvcn', 'filename'), ('tvcw', '0')]), ('ovct', [('tvcn', 'genre'), ('tvcw', '0')]), ('ovct', [('tvcn', 'album'), ('tvcw', '0')]), ('ovct', [('tvcn', 'label'), ('tvcw', '0')])])
+      files.sort()
+      for file in files:
+        if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
+          file_path = os.path.join(root[1:], file)
+          #print('Adding {} to crate {}'.format(file_path, crate_name))
+          logging.info('Adding {} to crate {}'.format(file_path, crate_name))
+          crate_data += encode([('otrk', [('ptrk', file_path)])])
+      if len(crate_data) > 0:
+        with open(crate_path, 'wb') as crate_file:
+          crate_file.write(crate_data)
+  except:
+    logging.exception("An exception was thrown!")
 
-def timer(sec):
+# Copy _Serato_ folder to _Serato_Backups
+def backup():
+  try:
+    now = datetime.now()
+    backup_folder = library + 'Backups/' + '_Serato_{}{}{}-{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute))
+    logging.info('Backing up library {} to {}'.format(library, backup_folder))
+    timer('', 5)
+    shutil.copytree(library, backup_folder)
+  except:
+    logging.exception('Error backing up database')
+
+def timer(message, sec):
   while sec:
-    print('...{}'.format(sec), end='\r')
+    print('{}...{}'.format(message, sec), end='\r')
     time.sleep(1)
     sec -= 1
-
-def backup():
-  now = datetime()
-  os.makedirs(library + 'Backups/' + '_Serato_{}-{}-{}'.format(now.year, ))
-  pass
+  print()
 
 startApp()
