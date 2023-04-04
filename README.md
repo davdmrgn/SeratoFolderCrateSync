@@ -2,7 +2,14 @@
 
 Syncrhonize music folders to Serato crates
 
-## Info
+## Usage
+
+- I wrote this for my specific use case, with the ability to adapt to other configurations later
+- macOS
+- Set Serato library and music paths in [`config.txt`](config.txt)
+- Double click [him](SeratoCrateFolderSync.command)
+
+## Crate File Info
 
 In each frame/tag/code/etc, bytes...
 

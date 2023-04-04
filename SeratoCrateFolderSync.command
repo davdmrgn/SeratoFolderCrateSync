@@ -10,9 +10,10 @@ import logging
 import shutil
 
 # Paths
+script_path = os.path.dirname(__file__)
 homedir = os.path.expanduser('~')
 config = configparser.ConfigParser()
-config.read('config.txt')
+config.read(os.path.join(script_path, 'config.txt'))
 library = homedir + config['paths']['library']
 music = homedir + config['paths']['music']
 
@@ -39,8 +40,8 @@ def startApp():
     logging.info('\tMusic Library:   ' + music)
   else:
     logging.error('\tMusic Library:   ' + ' - NOT FOUND')
-  if os.path.exists('config.txt'):
-    logging.info('\tConfiguration File:   ' + 'config.txt')
+  if os.path.exists(os.path.join(script_path, 'config.txt')):
+    logging.info('\tConfiguration File:   ' + os.path.join(script_path, 'config.txt'))
   else:
     logging.error('\tConfiguration File:   ' + ' - NOT FOUND')
   if os.path.exists(logfile):
