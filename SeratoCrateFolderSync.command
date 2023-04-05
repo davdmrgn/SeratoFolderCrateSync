@@ -201,7 +201,6 @@ def buildcrates():
           if len(crate_data) > 0:
             with open(crate_path, 'wb') as crate_file:
               crate_file.write(crate_data)
-
   except:
     logging.exception("An exception was thrown!")
 
