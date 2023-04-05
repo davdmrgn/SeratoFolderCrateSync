@@ -2,6 +2,8 @@
 
 Syncrhonize music folders to Serato crates
 
+- Version: 0.01
+
 ## Usage
 
 - I wrote this for my specific use case, with the ability to adapt to other configurations later
