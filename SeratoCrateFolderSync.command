@@ -9,17 +9,18 @@ from datetime import datetime
 import logging
 import shutil
 
-### Paths
+### Paths + Config
 script_path = os.path.dirname(__file__)
 homedir = os.path.expanduser('~')
 config = configparser.ConfigParser()
 config.read(os.path.join(script_path, 'config.txt'))
 library = homedir + config['paths']['library']
 music = homedir + config['paths']['music']
+include_parent_crate = config['crates']['include_parent_crate']
 
 ### Logging
 now = datetime.now()
-logfile = '{}/Logs/SeratoCrateFolderSync-{}-{}-{}.log'.format(library, str(now.year), str(now.month), str(now.day))
+logfile = '{}/Logs/SeratoCrateFolderSync-{}{}{}-{}{}.log'.format(library, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute))
 logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
@@ -49,21 +50,41 @@ def startApp():
   else:
     logging.error('\tLog File:   ' + ' - NOT FOUND')
   print()
+  logging.info('\tInclude parent folder as crate:   ' + include_parent_crate)
+  print()
   mainmenu()
 
 def mainmenu():
   print()
   print('S. Synchronize music folders to Serato crates')
   print()
+  print('P. Toggle include parent folder as crate setting')
+  print()
   print('Q. Quit')
   menu = str(input('\nSelect an option: ').lower())
   if menu == 's':
     buildcrates()
+  elif menu == 'p':
+    toggle_parent_folder_as_crate(include_parent_crate)
   elif menu == 'q':
     quit()
   else:
+    print('\tInvalid option')
+    time.sleep(2)
     startApp()
   logging.debug('Session end')
+
+def toggle_parent_folder_as_crate(value):
+  global include_parent_crate
+  if value == 'True':
+    include_parent_crate = 'False'
+  else:
+    include_parent_crate = 'True'
+  #logging.info('Updating config file') - NOT UPDATING
+  config.set('crates', 'include_parent_crate', include_parent_crate)
+  with open('config.txt', 'w') as configfile:
+    config.write(configfile)
+  startApp()
 
 ### Get a list of all crate files
 def getcrates():
@@ -130,9 +151,13 @@ def buildcrates():
   try:
     backup()
     logging.info('Synchronizing folders to crates')
+    logging.debug('include_parent_crate is {}'.format(include_parent_crate))
     timer('', 5)
     for root, dirs, files in os.walk(music):
-      crate_name = root.replace(music, os.path.basename(music)).replace('/', '%%') + '.crate'
+      if include_parent_crate == 'True':
+        crate_name = root.replace(music, os.path.basename(music)).replace('/', '%%') + '.crate'
+      else:
+        crate_name = root.replace(music, '')[1:].replace('/', '%%') + '.crate'
       crate_path = os.path.join(library + '/Subcrates/' + crate_name)
       crate_data = b''
       crate_data += encode([('vrsn', '1.0/Serato ScratchLive Crate')])
@@ -140,13 +165,14 @@ def buildcrates():
       crate_data += encode([('ovct', [('tvcn', 'song'), ('tvcw', '0')]), ('ovct', [('tvcn', 'artist'), ('tvcw', '0')]), ('ovct', [('tvcn', 'bpm'), ('tvcw', '0')]), ('ovct', [('tvcn', 'key'), ('tvcw', '0')]), ('ovct', [('tvcn', 'year'), ('tvcw', '0')]), ('ovct', [('tvcn', 'grouping'), ('tvcw', '0')]), ('ovct', [('tvcn', 'bitrate'), ('tvcw', '0')]), ('ovct', [('tvcn', 'undef'), ('tvcw', '0')]), ('ovct', [('tvcn', 'added'), ('tvcw', '0')]), ('ovct', [('tvcn', 'composer'), ('tvcw', '0')]), ('ovct', [('tvcn', 'comment'), ('tvcw', '0')]), ('ovct', [('tvcn', 'location'), ('tvcw', '0')]), ('ovct', [('tvcn', 'filename'), ('tvcw', '0')]), ('ovct', [('tvcn', 'genre'), ('tvcw', '0')]), ('ovct', [('tvcn', 'album'), ('tvcw', '0')]), ('ovct', [('tvcn', 'label'), ('tvcw', '0')])])
       files.sort()
       for file in files:
-        if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
+        if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')) and crate_name != '.crate':
           file_path = os.path.join(root[1:], file)
           logging.info('Adding {} to crate {}'.format(file_path, crate_name))
           crate_data += encode([('otrk', [('ptrk', file_path)])])
-      if len(crate_data) > 0:
-        with open(crate_path, 'wb') as crate_file:
-          crate_file.write(crate_data)
+          if len(crate_data) > 0:
+            with open(crate_path, 'wb') as crate_file:
+              crate_file.write(crate_data)
+
   except:
     logging.exception("An exception was thrown!")
 

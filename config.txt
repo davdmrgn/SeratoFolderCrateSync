@@ -1,3 +1,6 @@
 [paths]
 library = /Music/_Serato_
 music = /Music/Crates
+
+[crates]
+include_parent_crate = True
