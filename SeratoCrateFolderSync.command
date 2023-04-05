@@ -159,7 +159,8 @@ def backup():
     backup_folder = library + 'Backups/' + '_Serato_{}{}{}-{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute))
     logging.info('Backing up library {} to {}'.format(library, backup_folder))
     timer('', 5)
-    shutil.copytree(library, backup_folder)
+    copy_ignore = shutil.ignore_patterns('.*', 'Recording*')
+    shutil.copytree(library, backup_folder, ignore=copy_ignore)
   except:
     logging.exception('Error backing up database')
 
