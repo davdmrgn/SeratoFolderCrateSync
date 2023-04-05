@@ -9,17 +9,18 @@ from datetime import datetime
 import logging
 import shutil
 
-# Paths
+### Paths + Config
 script_path = os.path.dirname(__file__)
 homedir = os.path.expanduser('~')
 config = configparser.ConfigParser()
-config.read(os.path.join(script_path, 'config.txt'))
+config.read(os.path.join(script_path, 'config.ini'))
 library = homedir + config['paths']['library']
 music = homedir + config['paths']['music']
+include_parent_crate = config['crates']['include_parent_crate']
 
-# Logging
+### Logging
 now = datetime.now()
-logfile = '{}/Logs/SeratoCrateFolderSync-{}-{}-{}.log'.format(library, str(now.year), str(now.month), str(now.day))
+logfile = '{}/Logs/SeratoCrateFolderSync-{}{}{}-{}{}.log'.format(library, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute))
 logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
@@ -40,8 +41,8 @@ def startApp():
     logging.info('\tMusic Library:   ' + music)
   else:
     logging.error('\tMusic Library:   ' + ' - NOT FOUND')
-  if os.path.exists(os.path.join(script_path, 'config.txt')):
-    logging.info('\tConfiguration File:   ' + os.path.join(script_path, 'config.txt'))
+  if os.path.exists(os.path.join(script_path, 'config.ini')):
+    logging.info('\tConfiguration File:   ' + os.path.join(script_path, 'config.ini'))
   else:
     logging.error('\tConfiguration File:   ' + ' - NOT FOUND')
   if os.path.exists(logfile):
@@ -49,23 +50,72 @@ def startApp():
   else:
     logging.error('\tLog File:   ' + ' - NOT FOUND')
   print()
-  mainmenu()
+  logging.info('\tInclude parent folder as crate:   ' + include_parent_crate)
+  print()
+  file_count = []
+  folder_count = []
+  for root, dirs, files in os.walk(music):
+    if include_parent_crate == 'True':
+      folder_count.append(root)
+    else:
+      for dir in dirs:
+        folder_count.append(dir)
+    for file in files:
+      if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
+        file_count.append(file)
+  print('Folders: {}\nFiles: {}'.format(len(folder_count), len(file_count)))
+  mainmenu(folder_count, file_count)
 
-def mainmenu():
+def mainmenu(folder_count, file_count):
   print()
-  print('S. Synchronize music folders to Serato crates')
+  print('L. Change _Serato_ database location')
+  print('M. Change music location')
+  print('P. Toggle include parent folder as crate setting')
   print()
+  if library and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
+    print('S. Synchronize music folders to Serato crates')
+    print()
   print('Q. Quit')
   menu = str(input('\nSelect an option: ').lower())
   if menu == 's':
     buildcrates()
+  elif menu == 'l':
+    change_library_location(library)
+  elif menu == 'm':
+    pass
+  elif menu == 'p':
+    toggle_parent_folder_as_crate(include_parent_crate)
   elif menu == 'q':
     quit()
   else:
+    print('\tInvalid option')
+    time.sleep(2)
     startApp()
   logging.debug('Session end')
 
-# Get a list of all crate files
+def change_library_location(value):
+  global library
+  print('Current _Serato_ location:   ' + value)
+  print('New _Serato_ location: ')
+
+def change_music_location(value):
+  global music
+  print('Current Music location:   ' + value)
+  print('New Music location: ')
+
+def toggle_parent_folder_as_crate(value):
+  global include_parent_crate
+  if value == 'True':
+    include_parent_crate = 'False'
+  else:
+    include_parent_crate = 'True'
+  #logging.info('Updating config file') - NOT UPDATING
+  config.set('crates', 'include_parent_crate', include_parent_crate)
+  with open('config.ini', 'w') as configfile:
+    config.write(configfile)
+  startApp()
+
+### Get a list of all crate files
 def getcrates():
   crates = []
   for root, dirs, files in os.walk(library + '/Subcrates'):
@@ -75,7 +125,7 @@ def getcrates():
         crates.append(os.path.join(root, file))
   return(crates)
 
-# Convert crate file data into lines of key, value - for future use
+### Convert crate file data into lines of key, value - for future use
 def decode(data):
   result = []
   i = 0
@@ -102,7 +152,7 @@ def decode(data):
       break
   return(result)
 
-# Convert plain text list to binary crate file
+### Convert plain text list to binary crate file
 def encode(data):
   result = b''
   i = 0
@@ -121,19 +171,22 @@ def encode(data):
       result += (key + length + value)
       i += 1
     except:
-      #print('ERROR: i: {}, key: {}, length: {}, value: {}'.format(i, key, length, value))
       logging.error('ERROR: i: {}, key: {}, length: {}, value: {}'.format(i, key, length, value))
       break
   return(result)
 
-# Make new crate from scratch
+### Make new crate from scratch
 def buildcrates():
-  logging.info('Synchronizing folders to crates')
-  timer('', 5)
   try:
     backup()
+    logging.info('Synchronizing folders to crates')
+    logging.debug('include_parent_crate is {}'.format(include_parent_crate))
+    timer('', 5)
     for root, dirs, files in os.walk(music):
-      crate_name = root.replace(music, os.path.basename(music)).replace('/', '%%') + '.crate'
+      if include_parent_crate == 'True':
+        crate_name = root.replace(music, os.path.basename(music)).replace('/', '%%') + '.crate'
+      else:
+        crate_name = root.replace(music, '')[1:].replace('/', '%%') + '.crate'
       crate_path = os.path.join(library + '/Subcrates/' + crate_name)
       crate_data = b''
       crate_data += encode([('vrsn', '1.0/Serato ScratchLive Crate')])
@@ -141,25 +194,25 @@ def buildcrates():
       crate_data += encode([('ovct', [('tvcn', 'song'), ('tvcw', '0')]), ('ovct', [('tvcn', 'artist'), ('tvcw', '0')]), ('ovct', [('tvcn', 'bpm'), ('tvcw', '0')]), ('ovct', [('tvcn', 'key'), ('tvcw', '0')]), ('ovct', [('tvcn', 'year'), ('tvcw', '0')]), ('ovct', [('tvcn', 'grouping'), ('tvcw', '0')]), ('ovct', [('tvcn', 'bitrate'), ('tvcw', '0')]), ('ovct', [('tvcn', 'undef'), ('tvcw', '0')]), ('ovct', [('tvcn', 'added'), ('tvcw', '0')]), ('ovct', [('tvcn', 'composer'), ('tvcw', '0')]), ('ovct', [('tvcn', 'comment'), ('tvcw', '0')]), ('ovct', [('tvcn', 'location'), ('tvcw', '0')]), ('ovct', [('tvcn', 'filename'), ('tvcw', '0')]), ('ovct', [('tvcn', 'genre'), ('tvcw', '0')]), ('ovct', [('tvcn', 'album'), ('tvcw', '0')]), ('ovct', [('tvcn', 'label'), ('tvcw', '0')])])
       files.sort()
       for file in files:
-        if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
+        if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')) and crate_name != '.crate':
           file_path = os.path.join(root[1:], file)
-          #print('Adding {} to crate {}'.format(file_path, crate_name))
           logging.info('Adding {} to crate {}'.format(file_path, crate_name))
           crate_data += encode([('otrk', [('ptrk', file_path)])])
-      if len(crate_data) > 0:
-        with open(crate_path, 'wb') as crate_file:
-          crate_file.write(crate_data)
+          if len(crate_data) > 0:
+            with open(crate_path, 'wb') as crate_file:
+              crate_file.write(crate_data)
   except:
     logging.exception("An exception was thrown!")
 
-# Copy _Serato_ folder to _Serato_Backups
+### Copy _Serato_ folder to _Serato_Backups
 def backup():
   try:
     now = datetime.now()
     backup_folder = library + 'Backups/' + '_Serato_{}{}{}-{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute))
     logging.info('Backing up library {} to {}'.format(library, backup_folder))
     timer('', 5)
-    shutil.copytree(library, backup_folder)
+    copy_ignore = shutil.ignore_patterns('.*', 'Recording*')
+    shutil.copytree(library, backup_folder, ignore=copy_ignore)
   except:
     logging.exception('Error backing up database')
 
