@@ -9,7 +9,7 @@ from datetime import datetime
 import logging
 import shutil
 
-# Paths
+### Paths
 script_path = os.path.dirname(__file__)
 homedir = os.path.expanduser('~')
 config = configparser.ConfigParser()
@@ -17,7 +17,7 @@ config.read(os.path.join(script_path, 'config.txt'))
 library = homedir + config['paths']['library']
 music = homedir + config['paths']['music']
 
-# Logging
+### Logging
 now = datetime.now()
 logfile = '{}/Logs/SeratoCrateFolderSync-{}-{}-{}.log'.format(library, str(now.year), str(now.month), str(now.day))
 logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -65,7 +65,7 @@ def mainmenu():
     startApp()
   logging.debug('Session end')
 
-# Get a list of all crate files
+### Get a list of all crate files
 def getcrates():
   crates = []
   for root, dirs, files in os.walk(library + '/Subcrates'):
@@ -75,7 +75,7 @@ def getcrates():
         crates.append(os.path.join(root, file))
   return(crates)
 
-# Convert crate file data into lines of key, value - for future use
+### Convert crate file data into lines of key, value - for future use
 def decode(data):
   result = []
   i = 0
@@ -102,7 +102,7 @@ def decode(data):
       break
   return(result)
 
-# Convert plain text list to binary crate file
+### Convert plain text list to binary crate file
 def encode(data):
   result = b''
   i = 0
@@ -121,12 +121,11 @@ def encode(data):
       result += (key + length + value)
       i += 1
     except:
-      #print('ERROR: i: {}, key: {}, length: {}, value: {}'.format(i, key, length, value))
       logging.error('ERROR: i: {}, key: {}, length: {}, value: {}'.format(i, key, length, value))
       break
   return(result)
 
-# Make new crate from scratch
+### Make new crate from scratch
 def buildcrates():
   try:
     backup()
@@ -143,7 +142,6 @@ def buildcrates():
       for file in files:
         if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
           file_path = os.path.join(root[1:], file)
-          #print('Adding {} to crate {}'.format(file_path, crate_name))
           logging.info('Adding {} to crate {}'.format(file_path, crate_name))
           crate_data += encode([('otrk', [('ptrk', file_path)])])
       if len(crate_data) > 0:
@@ -152,7 +150,7 @@ def buildcrates():
   except:
     logging.exception("An exception was thrown!")
 
-# Copy _Serato_ folder to _Serato_Backups
+### Copy _Serato_ folder to _Serato_Backups
 def backup():
   try:
     now = datetime.now()
