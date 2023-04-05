@@ -20,7 +20,7 @@ In each frame/tag/code/etc, bytes...
 - 0:4 have a Serato tag (legend below)
 - 4:8 is the length of the data
 - 8:8+length is the remainder of the data
-- 0:4 can be decoded as ascii
+- 0:4 can be decoded as utf-8
 - 8:8+length can be decoded as utf-16-be (big endian)
 
 ## Fields
