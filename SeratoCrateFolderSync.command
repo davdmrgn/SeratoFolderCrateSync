@@ -13,7 +13,7 @@ import shutil
 script_path = os.path.dirname(__file__)
 homedir = os.path.expanduser('~')
 config = configparser.ConfigParser()
-config.read(os.path.join(script_path, 'config.txt'))
+config.read(os.path.join(script_path, 'config.ini'))
 library = homedir + config['paths']['library']
 music = homedir + config['paths']['music']
 include_parent_crate = config['crates']['include_parent_crate']
@@ -41,8 +41,8 @@ def startApp():
     logging.info('\tMusic Library:   ' + music)
   else:
     logging.error('\tMusic Library:   ' + ' - NOT FOUND')
-  if os.path.exists(os.path.join(script_path, 'config.txt')):
-    logging.info('\tConfiguration File:   ' + os.path.join(script_path, 'config.txt'))
+  if os.path.exists(os.path.join(script_path, 'config.ini')):
+    logging.info('\tConfiguration File:   ' + os.path.join(script_path, 'config.ini'))
   else:
     logging.error('\tConfiguration File:   ' + ' - NOT FOUND')
   if os.path.exists(logfile):
@@ -52,18 +52,37 @@ def startApp():
   print()
   logging.info('\tInclude parent folder as crate:   ' + include_parent_crate)
   print()
+  file_count = []
+  folder_count = []
+  for root, dirs, files in os.walk(music):
+    if include_parent_crate == 'True':
+      folder_count.append(root)
+    else:
+      for dir in dirs:
+        folder_count.append(dir)
+    for file in files:
+      if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
+        file_count.append(file)
+  print('Folders: {}\nFiles: {}'.format(len(folder_count), len(file_count)))
   mainmenu()
 
 def mainmenu():
   print()
-  print('S. Synchronize music folders to Serato crates')
-  print()
+  print('L. Change _Serato_ database location')
+  print('M. Change music location')
   print('P. Toggle include parent folder as crate setting')
   print()
+  if library and music:
+    print('S. Synchronize music folders to Serato crates')
+    print()
   print('Q. Quit')
   menu = str(input('\nSelect an option: ').lower())
   if menu == 's':
     buildcrates()
+  elif menu == 'l':
+    change_library_location(library)
+  elif menu == 'm':
+    pass
   elif menu == 'p':
     toggle_parent_folder_as_crate(include_parent_crate)
   elif menu == 'q':
@@ -74,6 +93,16 @@ def mainmenu():
     startApp()
   logging.debug('Session end')
 
+def change_library_location(value):
+  global library
+  print('Current _Serato_ location:   ' + value)
+  print('New _Serato_ location: ')
+
+def change_music_location(value):
+  global music
+  print('Current Music location:   ' + value)
+  print('New Music location: ')
+
 def toggle_parent_folder_as_crate(value):
   global include_parent_crate
   if value == 'True':
@@ -82,7 +111,7 @@ def toggle_parent_folder_as_crate(value):
     include_parent_crate = 'True'
   #logging.info('Updating config file') - NOT UPDATING
   config.set('crates', 'include_parent_crate', include_parent_crate)
-  with open('config.txt', 'w') as configfile:
+  with open('config.ini', 'w') as configfile:
     config.write(configfile)
   startApp()
 
