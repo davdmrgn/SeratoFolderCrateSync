@@ -64,15 +64,15 @@ def startApp():
       if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
         file_count.append(file)
   print('Folders: {}\nFiles: {}'.format(len(folder_count), len(file_count)))
-  mainmenu()
+  mainmenu(folder_count, file_count)
 
-def mainmenu():
+def mainmenu(folder_count, file_count):
   print()
   print('L. Change _Serato_ database location')
   print('M. Change music location')
   print('P. Toggle include parent folder as crate setting')
   print()
-  if library and music:
+  if library and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
     print('S. Synchronize music folders to Serato crates')
     print()
   print('Q. Quit')
