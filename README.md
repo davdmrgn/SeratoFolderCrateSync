@@ -11,6 +11,8 @@ Syncrhonize music folders to Serato crates
 - Set Serato library and music paths in [`config.ini`](config.ini)
 - Double click [him](SeratoCrateFolderSync.command)
 
+<details><summary>More info</summary><p>
+
 ## Crate File Info
 
 In each frame/tag/code/etc, bytes...
@@ -49,3 +51,5 @@ Source: https://github.com/Holzhaus/serato-tags/blob/master/scripts/database_v2.
   - `tvcn`: Column Name
   - `tvcw`: Column Width
   - `ptrk`: Track Path
+
+</p></details>
