@@ -8,6 +8,7 @@ import time
 from datetime import datetime
 import logging
 import shutil
+import filecmp
 
 ### Paths + Config
 script_path = os.path.dirname(__file__)
@@ -201,20 +202,37 @@ def buildcrates():
           if len(crate_data) > 0:
             with open(crate_path, 'wb') as crate_file:
               crate_file.write(crate_data)
+    compare_crates()
   except:
     logging.exception("An exception was thrown!")
 
 ### Copy _Serato_ folder to _Serato_Backups
 def backup():
   try:
+    global backup_folder
     now = datetime.now()
     backup_folder = library + 'Backups/' + '_Serato_{}{}{}-{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute))
     logging.info('Backing up library {} to {}'.format(library, backup_folder))
     timer('', 5)
-    copy_ignore = shutil.ignore_patterns('.*', 'Recording*')
+    copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
     shutil.copytree(library, backup_folder, ignore=copy_ignore)
   except:
     logging.exception('Error backing up database')
+
+def compare_crates():
+  try:
+    logging.debug('Comparing crates we synchronized to what we backed up')
+    compare = filecmp.dircmp(library + '/Subcrates', backup_folder + '/Subcrates')
+    if compare.left_list ==  compare.right_list:
+      print()
+      logging.warning('Backed up crates are the same as generated crates. Backup may be deleted to save disk space.')
+      menu = str(input('\nEnter [Y or YES] to delete the backup: ').lower())
+      if re.match('y|yes', menu):
+        print()
+        logging.warning('Removing backup: {}'.format(backup_folder))
+        shutil.rmtree(backup_folder)
+  except:
+    logging.exception('Error on backup folder comparison')
 
 def timer(message, sec):
   while sec:
