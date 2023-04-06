@@ -219,6 +219,7 @@ def backup():
   except:
     logging.exception('Error backing up database')
 
+### Compare backup with generated crates; offer to delete backup to save disk space
 def compare_crates():
   try:
     logging.debug('Comparing crates we synchronized to what we backed up')
