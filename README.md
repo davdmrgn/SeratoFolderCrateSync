@@ -2,7 +2,12 @@
 
 Syncrhonize music folders to Serato crates
 
-- Version: 0.01
+- Version: 0.02
+
+## Requirements
+
+- Python3
+  > Python can be installed via Xcode Command Line Tools: `xcode-select --install`
 
 ## Usage
 
@@ -10,6 +15,12 @@ Syncrhonize music folders to Serato crates
 - macOS
 - Set Serato library and music paths in [`config.ini`](config.ini)
 - Double click [him](SeratoCrateFolderSync.command)
+
+## Limitations
+
+- Not tested with external drives/libraries
+- Custom crate columns not yet supported
+- Will not delete crates (recommend deleting crates manually in Serato)
 
 <details><summary>More info</summary><p>
 
