@@ -13,7 +13,7 @@ import filecmp
 ### Paths + Config
 script_path = os.path.dirname(__file__)
 homedir = os.path.expanduser('~')
-config = configparser.ConfigParser()
+config = configparser.ConfigParser(comment_prefixes=';', allow_no_value=True)
 config.read(os.path.join(script_path, 'config.ini'))
 library = homedir + config['paths']['library']
 music = homedir + config['paths']['music']
