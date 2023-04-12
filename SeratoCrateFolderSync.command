@@ -75,13 +75,14 @@ def mainmenu(folder_count, file_count):
   print('L. Change _Serato_ database location')
   print('M. Change music location')
   print('P. Toggle include parent folder as crate setting')
+  print('T. Toggle TEST mode (run without making changes)')
   print()
   if library and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
     print('S. Synchronize music folders to Serato crates')
-    print('R. Rebuild music folders to Serato crates (delete exisitng)')
+    print('R. Rebuild subcrates from scratch')
     print()
   if test_mode == 'True':
-    print('T. Test Mode - Active: {}'.format(test_mode))
+    print('Test Mode: ENABLED'.format(test_mode))
     print()
   print('Q. Quit')
   menu = str(input('\nSelect an option: ').lower())

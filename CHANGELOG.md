@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.02] - 2023-04-12
+## [0.021](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.021) - 2023-04-12
 
 ### Added
 - Incremental synchronizing
