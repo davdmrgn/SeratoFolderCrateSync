@@ -1,12 +1,15 @@
 # Change Log
 
-## [0.02] - 2023-04-07
+## [0.02] - 2023-04-12
 
 ### Added
-- Prompt to delete backup if no changes to crates
+- Incremental synchronizing
+- Log files show more detail than stdout with debug logging
+- Write to temp folder first, then move folders/files around as needed
+- Optional rebuild all crates, if existing
+- Test mode (run without applying changes)
 
 ### Fixed
-- Retain config.ini on update from menu
 
 ## [0.01](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.01) - 2023-04-05
 
