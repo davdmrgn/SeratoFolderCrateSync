@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.03]((https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.03) - 2023-04-13
+
+### Added
+- Change music and library menu items functional
+
+### Fixed
+- Running multiple tests brings you back to the menu and resets the update count
+- Test mode display
+
 ## [0.021](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.021) - 2023-04-12
 
 ### Added
