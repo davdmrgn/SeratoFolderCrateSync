@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.03]((https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.03) - 2023-04-13
+## [0.03]((https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.03) - 2023-04-14
 
 ### Added
 - Change music and library menu items functional

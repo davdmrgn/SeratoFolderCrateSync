@@ -2,7 +2,7 @@
 
 Syncrhonize music folders to Serato crates
 
-- Version: 0.021
+- Version: 0.03
 
 ## Requirements
 
