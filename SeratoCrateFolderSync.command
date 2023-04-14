@@ -16,10 +16,15 @@ script_path = os.path.dirname('.')
 homedir = os.path.expanduser('~')
 config = configparser.ConfigParser()
 config.read(os.path.join(script_path, 'config.ini'))
-library = homedir + config['paths']['library']
-music = homedir + config['paths']['music']
+if os.path.exists(config['paths']['library']):
+  library = config['paths']['library']
+else:
+  library = homedir + config['paths']['library']
+if os.path.exists(config['paths']['music']):
+  music = config['paths']['music']
+else:
+  music = homedir + config['paths']['music']
 include_parent_crate = config['crates']['include_parent_crate']
-updates = 0
 test_mode = 'False'
 
 ### Logging
@@ -38,23 +43,25 @@ def startApp():
   print('╚══════════════════════════════════════════════════════════════════╝')
   print()
   if os.path.exists(library):
-    logging.info('\tSerato Database:   ' + library)
+    logging.info('Serato Database:  ' + library)
   else:
-    logging.error('\tSerato Database:   ' + ' - NOT FOUND')
+    logging.error('Serato Database:  ' + ' - NOT FOUND')
   if os.path.exists(music):
-    logging.info('\tMusic Library:   ' + music)
+    logging.info('Music Library:  ' + music)
   else:
-    logging.error('\tMusic Library:   ' + ' - NOT FOUND')
+    logging.error('Music Library:  ' + ' - NOT FOUND')
   if os.path.exists(os.path.join(script_path, 'config.ini')):
-    logging.info('\tConfiguration File:   ' + os.path.join(script_path, 'config.ini'))
+    logging.info('Configuration File:  ' + os.path.join(script_path, 'config.ini'))
   else:
-    logging.error('\tConfiguration File:   ' + ' - NOT FOUND')
+    logging.error('Configuration File:  ' + ' - NOT FOUND')
   if os.path.exists(logfile):
-    logging.info('\tLog File:   ' + logfile)
+    logging.info('Log File:  ' + logfile)
   else:
-    logging.error('\tLog File:   ' + ' - NOT FOUND')
+    logging.error('Log File:  ' + ' - NOT FOUND')
   print()
-  logging.info('\tInclude parent folder as crate:   ' + include_parent_crate)
+  logging.info('Include parent folder as crate:  ' + include_parent_crate)
+  if test_mode == 'True':
+    print('Test Mode: ENABLED'.format(test_mode))
   print()
   file_count = []
   folder_count = []
@@ -81,22 +88,23 @@ def mainmenu(folder_count, file_count):
     print('S. Synchronize music folders to Serato crates')
     print('R. Rebuild subcrates from scratch')
     print()
-  if test_mode == 'True':
-    print('Test Mode: ENABLED'.format(test_mode))
-    print()
   print('Q. Quit')
   menu = str(input('\nSelect an option: ').lower())
   global rebuild
   if menu == 's':
     rebuild = 'False'
     sync_crates()
+    if test_mode == 'True':
+      startApp()
   elif menu == 'r':
     rebuild = 'True'
     sync_crates()
+    if test_mode == 'True':
+      startApp()
   elif menu == 'l':
     change_library_location(library)
   elif menu == 'm':
-    pass
+    change_music_location(music)
   elif menu == 'p':
     toggle_parent_folder_as_crate(include_parent_crate)
   elif menu == 't':
@@ -112,12 +120,44 @@ def mainmenu(folder_count, file_count):
 def change_library_location(value):
   global library
   print('Current _Serato_ location:   ', value)
-  print('New _Serato_ location: ')
+  value = str(input('\nEnter new library location: '))
+  if os.path.exists(value):
+    library = value
+    config.set('paths', 'library', library)
+    with open('config.ini', 'w') as config_file:
+      config.write(config_file)
+  elif os.path.exists(os.path.join(homedir, value)):
+    library = os.path.join(homedir, value)
+  elif value == '':
+    print('Setting library back to default')
+    time.sleep(2)
+    library = homedir + config['paths']['library']
+  else:
+    logging.error('New library path not found')
+    time.sleep(2)
+    change_library_location(library)
+  startApp()
 
 def change_music_location(value):
   global music
   print('Current Music location:   ', value)
-  print('New Music location: ')
+  value = str(input('\nEnter new music location: '))
+  if os.path.exists(value):
+    music = value
+    config.set('paths', 'music', music)
+    with open('config.ini', 'w') as config_file:
+      config.write(config_file)
+  elif os.path.exists(os.path.join(homedir, value)):
+    music = os.path.join(homedir, value)
+  elif value == '':
+    print('Setting music back to default')
+    time.sleep(2)
+    music = homedir + config['paths']['music']
+  else:
+    logging.error('New music path not found')
+    time.sleep(2)
+    change_music_location(music)
+  startApp()
 
 def toggle_parent_folder_as_crate(value):
   global include_parent_crate
@@ -134,9 +174,10 @@ def toggle_test_mode():
   global test_mode
   if test_mode == 'True':
     test_mode = 'False'
+    logging.info('Test Mode: DISABLED')
   else:
     test_mode = 'True'
-  logging.info('Test mode: {}'.format(test_mode))
+    logging.info('Test Mode: ENABLED')
   time.sleep(1)
   startApp()
 
@@ -191,7 +232,7 @@ def decode(data):
   return(result)
 
 ### Copy library to temp folder
-def temp_library():
+def make_temp_library():
   try:
     tempdir = os.path.join(library + 'Temp')
     logging.debug('Create temporary library at {}'.format(tempdir))
@@ -202,7 +243,7 @@ def temp_library():
     shutil.copytree(library, tempdir, ignore=copy_ignore)
     return(tempdir)
   except:
-    logging.exception("An exception was thrown!")
+    logging.exception('We ran into a problem at {}'.format(__self__))
 
 ### Scan music folders
 def music_folder_scan():
@@ -240,7 +281,7 @@ def crate_check(temp_library, music_folders):
 def build_crate(crate_path, music_folder):
   global updates
   crate_name = os.path.split(crate_path)[-1]
-  logging.info('Building new crate file from {}\tcrate file: {}'.format(music_folder, crate_path))
+  logging.info('\nBuilding new crate file {} from path {}'.format(crate_path, music_folder))
   crate_data = b''
   crate_data += encode([('vrsn', '1.0/Serato ScratchLive Crate')])
   crate_data += encode([('osrt', [('tvcn', 'song'), ('brev', '')])])
@@ -248,12 +289,12 @@ def build_crate(crate_path, music_folder):
   for file in sorted(os.listdir(music_folder)):
     if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
       file_path = os.path.join(music_folder[1:], file)
-      logging.info('Adding {} to crate {}'.format(file_path, crate_name))
+      logging.info('Adding {} to {}'.format(file_path, crate_name))
       crate_data += encode([('otrk', [('ptrk', file_path)])])
+      updates += 1
   if len(crate_data) > 525:
     with open(crate_path, 'w+b') as crate_file:
       crate_file.write(crate_data)
-    updates += 1
   pass
 
 ### Update existing crate
@@ -280,7 +321,7 @@ def backup_library():
   try:
     now = datetime.now()
     backup_folder = library + 'Backups/' + '_Serato_{}{}{}-{}{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute), '{:02d}'.format(now.second))
-    logging.info('{} updates. Backing up library at {} to {}'.format(updates, library, backup_folder))
+    logging.info('\n{} updates. Backing up library at {} to {}'.format(updates, library, backup_folder))
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
     shutil.copytree(library, backup_folder, ignore=copy_ignore)
   except:
@@ -296,8 +337,10 @@ def move_library(temp_library):
 
 def sync_crates():
   try:
+    global updates
+    updates = 0
     global temp_library
-    temp_library = temp_library()
+    temp_library = make_temp_library()
     music_folders = music_folder_scan()
     crate_check(temp_library, music_folders)
     if updates > 0:
@@ -305,12 +348,13 @@ def sync_crates():
         backup_library()
         move_library(temp_library)
       else:
-        logging.info("We're in test mode. Not backing up or applying {} changes.".format(updates))
+        logging.info("\n{} updates. Test Mode ENABLED. Not backing up or applying changes.".format(updates))
     else:
-      logging.info('No updates to library required')
+      logging.info('\nNo updates to library required')
+    time.sleep(4)
     logging.debug('Removing temporary library at {}'.format(temp_library))
     shutil.rmtree(temp_library)
   except:
-    logging.exception("An exception was thrown!")
+    logging.exception('We ran into a problem at {}'.format(__self__))
 
 startApp()
