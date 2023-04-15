@@ -11,8 +11,8 @@ import shutil
 import filecmp
 
 ### Paths + Config
-#script_path = os.path.dirname(__file__)
-script_path = os.path.dirname('.')
+script_path = os.path.dirname(__file__)
+#script_path = os.path.dirname('.')
 homedir = os.path.expanduser('~')
 config = configparser.ConfigParser()
 config.read(os.path.join(script_path, 'config.ini'))
