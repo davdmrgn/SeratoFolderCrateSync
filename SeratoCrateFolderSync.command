@@ -21,6 +21,7 @@ def header():
 # Search disks for Serato databases
 def SearchDatabase():
   header()
+  print('Scanning for Serato database')
   partitions = psutil.disk_partitions()
   database_search = []
   for p in partitions:
@@ -452,6 +453,7 @@ if database:
       with open(config_location, 'w') as config_file:
         config.write(config_file)
     include_parent_crate = config['crates']['include_parent_crate']
+    test_mode = config['modes']['test_mode']
 
     startApp()
   else:
