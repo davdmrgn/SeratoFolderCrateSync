@@ -2,7 +2,10 @@
 
 Syncrhonize music folders to Serato crates
 
-- Version: 0.03
+- Version: 0.04
+- macOS only (not tested on Windows)
+
+> I wrote this for my specific use case, with the ability to adapt to other configurations later.
 
 ## Requirements
 
@@ -11,19 +14,53 @@ Syncrhonize music folders to Serato crates
 
 ## Usage
 
-- I wrote this for my specific use case, with the ability to adapt to other configurations later
-- macOS
-- Set Serato library and music paths in [`config.ini`](config.ini)
-- Double click [him](SeratoCrateFolderSync.command)
+- Right-click [SeratoCrateFolderSync.command](SeratoCrateFolderSync.command) > Open
+  - Accept any security warnings
+
+## How does it work?
+
+- TEST mode enabled by default (changes made to temporary directory and deleted - changes show on screen)
+- Script will:
+  - Search for `_Serato_` database directories
+  - Scan songs in `database V2` file to find song locations
+  - Scan folders and create/update crates matching your folder structure
+- You may toggle the option to include the parent folder as a parent crate
+- New crates will be created; existing crates will add new songs
+- If any updates, existing crates will be backed up to `_Serato_Backups`
+- Backups will not contain files in `Recording*` directories to save disk space
+- This script only updates files in `/Subcrates` directory; does not modify:
+  - `database V2` file
+  - Smart crates
+- Changes and script preferences are saved to a log file in `_Serato_/Logs`
 
 ## Limitations
 
-- Not tested with external drives/libraries
+- Not tested on Windows
+- WIP: External drives/libraries
 - Custom crate columns not yet supported
 - Will not delete crates (recommend deleting crates manually in Serato)
 
 <details><summary>More info</summary><p>
 
+## Parent Crate Option
+
+- Include the top level folder as a crate? True
+  ```
+  Example of True:
+    Crates
+    ├─ Top 40
+    ├─ Chill
+    ├─ R&B
+    └─ House
+  ```
+- Do not include the top level folder as a crate? False
+  ```
+  Example of False:
+    Top 40
+    Chill
+    R&B
+    House
+  ```
 ## Crate File Info
 
 In each frame/tag/code/etc, bytes...

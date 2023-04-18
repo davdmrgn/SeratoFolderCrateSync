@@ -1,6 +1,17 @@
 # Change Log
 
-## [0.03]((https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.03) - 2023-04-14
+## [0.04](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.04) - 2023-04-20
+
+### Added
+- Support for multiple Serato databases (including external drives)
+- Search all drives for `_Serato_` folder(s) at launch
+- Search `database V2` file for music location at launch
+
+### Changed
+- Config file name and location (now stored in Serato Logs directory to support different settings for different databases/drives)
+- Clear screen on start
+
+## [0.03](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.03) - 2023-04-14
 
 ### Added
 - Change music and library menu items functional

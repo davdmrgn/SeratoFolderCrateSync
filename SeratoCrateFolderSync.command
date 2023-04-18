@@ -9,49 +9,120 @@ from datetime import datetime
 import logging
 import shutil
 import filecmp
+import psutil
 
-### Paths + Config
-script_path = os.path.dirname(__file__)
-#script_path = os.path.dirname('.')
-homedir = os.path.expanduser('~')
-config = configparser.ConfigParser()
-config.read(os.path.join(script_path, 'config.ini'))
-if os.path.exists(config['paths']['library']):
-  library = config['paths']['library']
-else:
-  library = homedir + config['paths']['library']
-if os.path.exists(config['paths']['music']):
-  music = config['paths']['music']
-else:
-  music = homedir + config['paths']['music']
-include_parent_crate = config['crates']['include_parent_crate']
-test_mode = 'False'
-
-### Logging
-now = datetime.now()
-logfile = '{}/Logs/SeratoCrateFolderSync-{}{}{}-{}{}.log'.format(library, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute))
-logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-logging.getLogger('').addHandler(console)
-logging.debug('Session start')
-
-def startApp():
+def header():
   print()
   print('╔══════════════════════════════════════════════════════════════════╗')
   print('║                     Serato Crate Folder Sync                     ║')
   print('╚══════════════════════════════════════════════════════════════════╝')
   print()
-  if os.path.exists(library):
-    logging.info('Serato Database:  ' + library)
+
+# Search disks for Serato databases
+def SearchDatabase():
+  header()
+  partitions = psutil.disk_partitions()
+  database_search = []
+  for p in partitions:
+    if not re.search('dontbrowse', p.opts):
+      database_search.append(p.mountpoint)
+  homedir = os.path.expanduser('~')
+  music_path = os.path.join(homedir, 'Music')
+  if os.path.exists(music_path):
+    database_search.append(music_path)
+  serato_databases = []
+  for d in database_search:
+    database_path = os.path.join(d, '_Serato_')
+    if os.path.exists(database_path):
+      serato_databases.append(database_path)
+  if len(serato_databases) == 1:
+    logging.info('Serato database found: {}'.format(serato_databases[0]))
+    time.sleep(1.5)
+    return(serato_databases[0])
+  elif len(serato_databases) > 1:
+    logging.info('{} Serato databases found'.format(len(serato_databases)))
+    return(SelectDatabase(serato_databases))
+    time.sleep(1.5)
   else:
-    logging.error('Serato Database:  ' + ' - NOT FOUND')
+    logging.error('Serato database not found')
+    time.sleep(1.5)
+
+# Select a database if more than one exists
+def SelectDatabase(serato_databases):
+  print()
+  print('Select the database')
+  print()
+  for number, path in enumerate(serato_databases):
+    print('  {}. {}'.format(number + 1, path))
+  try:
+    menu = int(input('\nSelect an option: '))
+    if menu > 0 and menu <= len(serato_databases):  
+      return(serato_databases[menu - 1])
+  except:
+    pass
+
+def StartLogging():
+  ### Logging
+  now = datetime.now()
+  global logfile
+  logfile = '{}/Logs/SeratoCrateFolderSync-{}{}{}-{}{}.log'.format(database, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute))
+  logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+  console = logging.StreamHandler()
+  console.setLevel(logging.INFO)
+  logging.getLogger('').addHandler(console)
+  logging.debug('Session start')
+
+# Find music location from Serato database
+def FindMusic():
+  serato_database = os.path.join(database, 'database V2')
+  if os.path.exists(serato_database):
+    print('Scanning Serato database for music files')
+    with open(serato_database, 'rb') as db:
+      db_binary = db.read()
+    db = decode(db_binary)
+    files = []
+    for file in db:
+      try:
+        files.append(os.path.join('/', file[1][1][1]))
+      except:
+        pass
+    if len(files) > 1:
+      music_paths = []
+      music_paths.append(os.path.commonprefix(files))
+      if len(music_paths) == 1:
+        logging.info('Music location found: {}'.format(music_paths[0].rstrip('/')))
+        time.sleep(1.5)
+        return(music_paths[0].rstrip('/'))
+      elif len(music_paths) > 1:
+        logging.info('{} Music locations found'.format(len(music_paths)))
+        return(SelectMusicPath(music_paths).rstrip('/'))
+        time.sleep(1.5)
+      else:
+        logging.error(' Music locations not found')
+        time.sleep(1.5)
+
+def SelectMusicPath(music_paths):
+  print()
+  print('Select music path')
+  print()
+  for number, path in enumerate(music_paths):
+    print('  {}. {}'.format(number + 1, path))
+  menu = int(input('\nSelect an option: '))
+  if menu > 0 and menu <= len(music_paths):  
+    return(music_paths[menu - 1])
+
+def startApp():
+  header()
+  if os.path.exists(database):
+    logging.info('Serato database:  ' + database)
+  else:
+    logging.error('Serato database:  ' + ' - NOT FOUND')
   if os.path.exists(music):
     logging.info('Music Library:  ' + music)
   else:
     logging.error('Music Library:  ' + ' - NOT FOUND')
-  if os.path.exists(os.path.join(script_path, 'config.ini')):
-    logging.info('Configuration File:  ' + os.path.join(script_path, 'config.ini'))
+  if os.path.exists(config_location):
+    logging.info('Configuration File:  ' + config_location)
   else:
     logging.error('Configuration File:  ' + ' - NOT FOUND')
   if os.path.exists(logfile):
@@ -61,7 +132,7 @@ def startApp():
   print()
   logging.info('Include parent folder as crate:  ' + include_parent_crate)
   if test_mode == 'True':
-    print('Test Mode: ENABLED'.format(test_mode))
+    logging.info('Test Mode: ENABLED'.format(test_mode))
   print()
   file_count = []
   folder_count = []
@@ -74,7 +145,7 @@ def startApp():
     for file in files:
       if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
         file_count.append(file)
-  print('Folders: {}\nFiles: {}'.format(len(folder_count), len(file_count)))
+  logging.info('Folders: {}\nFiles: {}'.format(len(folder_count), len(file_count)))
   mainmenu(folder_count, file_count)
 
 def mainmenu(folder_count, file_count):
@@ -84,7 +155,7 @@ def mainmenu(folder_count, file_count):
   print('P. Toggle include parent folder as crate setting')
   print('T. Toggle TEST mode (run without making changes)')
   print()
-  if library and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
+  if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
     print('S. Synchronize music folders to Serato crates')
     print('R. Rebuild subcrates from scratch')
     print()
@@ -102,7 +173,7 @@ def mainmenu(folder_count, file_count):
     if test_mode == 'True':
       startApp()
   elif menu == 'l':
-    change_library_location(library)
+    change_database_location(database)
   elif menu == 'm':
     change_music_location(music)
   elif menu == 'p':
@@ -117,40 +188,40 @@ def mainmenu(folder_count, file_count):
     startApp()
   logging.debug('Session end')
 
-def change_library_location(value):
-  global library
-  print('Current _Serato_ location:   ', value)
-  value = str(input('\nEnter new library location: '))
+def change_database_location(value):
+  global database
+  logging.info('Current _Serato_ location:   ', value)
+  value = str(input('\nEnter new database location: '))
   if os.path.exists(value):
-    library = value
-    config.set('paths', 'library', library)
-    with open('config.ini', 'w') as config_file:
+    database = value
+    config.set('paths', 'database', database)
+    with open(config_location, 'w') as config_file:
       config.write(config_file)
   elif os.path.exists(os.path.join(homedir, value)):
-    library = os.path.join(homedir, value)
+    database = os.path.join(homedir, value)
   elif value == '':
-    print('Setting library back to default')
+    logging.info('Setting database back to default')
     time.sleep(2)
-    library = homedir + config['paths']['library']
+    database = homedir + config['paths']['database']
   else:
-    logging.error('New library path not found')
+    logging.error('New database path not found')
     time.sleep(2)
-    change_library_location(library)
+    change_database_location(database)
   startApp()
 
 def change_music_location(value):
   global music
-  print('Current Music location:   ', value)
+  logging.info('Current Music location:   ', value)
   value = str(input('\nEnter new music location: '))
   if os.path.exists(value):
     music = value
     config.set('paths', 'music', music)
-    with open('config.ini', 'w') as config_file:
+    with open(config_location, 'w') as config_file:
       config.write(config_file)
   elif os.path.exists(os.path.join(homedir, value)):
     music = os.path.join(homedir, value)
   elif value == '':
-    print('Setting music back to default')
+    logging.info('Setting music back to default')
     time.sleep(2)
     music = homedir + config['paths']['music']
   else:
@@ -166,7 +237,7 @@ def toggle_parent_folder_as_crate(value):
   else:
     include_parent_crate = 'True'
   config.set('crates', 'include_parent_crate', include_parent_crate)
-  with open('config.ini', 'w') as config_file:
+  with open(config_location, 'w') as config_file:
     config.write(config_file)
   startApp()
 
@@ -227,23 +298,23 @@ def decode(data):
         result.append((key, value))
       i += 8 + length
     except:
-      logging.error('DECODE ERROR: i: {}, key: {}, length: {}, binary: {}, value: {}'.format(i, key, length, binary, value))
+      #logging.error('DECODE ERROR: i: {}, key: {}, length: {}, binary: {}, value: {}'.format(i, key, length, binary, value))
       break
   return(result)
 
-### Copy library to temp folder
-def make_temp_library():
+### Copy database to temp folder
+def make_temp_database():
   try:
-    tempdir = os.path.join(library + 'Temp')
-    logging.debug('Create temporary library at {}'.format(tempdir))
+    tempdir = os.path.join(database + 'Temp')
+    logging.debug('Create temporary database at {}'.format(tempdir))
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
     if os.path.exists(tempdir):
-      logging.warning('Removing existing temporary library at {}'.format(tempdir))
+      logging.warning('Removing existing temporary database at {}'.format(tempdir))
       shutil.rmtree(tempdir)
-    shutil.copytree(library, tempdir, ignore=copy_ignore)
+    shutil.copytree(database, tempdir, ignore=copy_ignore)
     return(tempdir)
   except:
-    logging.exception('We ran into a problem at {}'.format(__self__))
+    logging.exception('We ran into a problem at make_temp_database')
 
 ### Scan music folders
 def music_folder_scan():
@@ -258,13 +329,13 @@ def music_folder_scan():
   return(folder_crates)
 
 ### Check for existing crate, add if needed
-def crate_check(temp_library, music_folders):
+def crate_check(temp_database, music_folders):
   for music_folder in music_folders:
     if include_parent_crate == 'True':
       crate_name = music_folder.replace(music, os.path.basename(music)).replace('/', '%%') + '.crate'
     else:
       crate_name = music_folder.replace(music, '')[1:].replace('/', '%%') + '.crate'
-    crate_path = os.path.join(temp_library, 'Subcrates', crate_name)
+    crate_path = os.path.join(temp_database, 'Subcrates', crate_name)
     if os.path.exists(crate_path):
       if rebuild == 'True':
         logging.info('Rebuilding crate: {}'.format(crate_path))
@@ -289,7 +360,7 @@ def build_crate(crate_path, music_folder):
   for file in sorted(os.listdir(music_folder)):
     if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
       file_path = os.path.join(music_folder[1:], file)
-      logging.info('Adding {} to {}'.format(file_path, crate_name))
+      logging.info('Adding {} to {}'.format(file_path, crate_name.replace('%%', u' \u2771 ')))
       crate_data += encode([('otrk', [('ptrk', file_path)])])
       updates += 1
   if len(crate_data) > 525:
@@ -311,27 +382,27 @@ def existing_crate(crate_path, music_folder):
       if crate_data.find(file_binary) != -1:
         logging.debug('{} exists in crate {}'.format(file, crate_name))
       else:
-        logging.info('Adding {} to crate {}'.format(file, crate_name))
+        logging.info('Adding {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
         with open(crate_path, 'ab') as crate_file:
           crate_file.write(file_binary)
         updates += 1
 
-### Backup existing library
-def backup_library():
+### Backup existing database
+def backup_database():
   try:
     now = datetime.now()
-    backup_folder = library + 'Backups/' + '_Serato_{}{}{}-{}{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute), '{:02d}'.format(now.second))
-    logging.info('\n{} updates. Backing up library at {} to {}'.format(updates, library, backup_folder))
+    backup_folder = database + 'Backups/' + '_Serato_{}{}{}-{}{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute), '{:02d}'.format(now.second))
+    logging.info('\n{} updates. Backing up database at {} to {}'.format(updates, database, backup_folder))
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
-    shutil.copytree(library, backup_folder, ignore=copy_ignore)
+    shutil.copytree(database, backup_folder, ignore=copy_ignore)
   except:
     logging.exception('Error backing up database')
 
-### Move temp library to Serato library location
-def move_library(temp_library):
+### Move temp database to Serato database location
+def move_database(temp_database):
   try:
-    logging.info('Moving temp library {} to {}'.format(temp_library, library))
-    shutil.copytree(os.path.join(temp_library, 'Subcrates'), os.path.join(library, 'Subcrates'), dirs_exist_ok=True)
+    logging.info('Moving temp database {} to {}'.format(temp_database, database))
+    shutil.copytree(os.path.join(temp_database, 'Subcrates'), os.path.join(database, 'Subcrates'), dirs_exist_ok=True)
   except:
     logging.exception('Error moving database')
 
@@ -339,22 +410,51 @@ def sync_crates():
   try:
     global updates
     updates = 0
-    global temp_library
-    temp_library = make_temp_library()
+    global temp_database
+    temp_database = make_temp_database()
     music_folders = music_folder_scan()
-    crate_check(temp_library, music_folders)
+    crate_check(temp_database, music_folders)
     if updates > 0:
       if test_mode == 'False':
-        backup_library()
-        move_library(temp_library)
+        backup_database()
+        move_database(temp_database)
       else:
         logging.info("\n{} updates. Test Mode ENABLED. Not backing up or applying changes.".format(updates))
     else:
-      logging.info('\nNo updates to library required')
+      logging.info('\nNo updates to database required')
     time.sleep(4)
-    logging.debug('Removing temporary library at {}'.format(temp_library))
-    shutil.rmtree(temp_library)
+    logging.debug('Removing temporary database at {}'.format(temp_database))
+    shutil.rmtree(temp_database)
   except:
-    logging.exception('We ran into a problem at {}'.format(__self__))
+    logging.exception('We ran into a problem at sync_crates')
 
-startApp()
+os.system('clear')
+database = SearchDatabase()
+if database:
+  StartLogging()
+  music = FindMusic()
+  if music:
+    ### Paths + Config
+    script_path = os.path.dirname(__file__)
+    homedir = os.path.expanduser('~')
+    config = configparser.ConfigParser()
+    config_location = os.path.join(database, 'Logs', 'SeratoCrateFolderSync.ini')
+    if os.path.exists(config_location):
+      config.read(config_location)
+    else:
+      include_parent_crate = 'True'
+      test_mode = 'True'
+      config.add_section('crates')
+      config.add_section('paths')
+      config.add_section('modes')
+      config.set('crates', 'include_parent_crate', include_parent_crate)
+      config.set('modes', 'test_mode', test_mode)
+      with open(config_location, 'w') as config_file:
+        config.write(config_file)
+    include_parent_crate = config['crates']['include_parent_crate']
+
+    startApp()
+  else:
+    logging.error('Music location not found')
+else:
+  print('Serato database not found')
