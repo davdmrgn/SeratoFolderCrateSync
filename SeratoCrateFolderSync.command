@@ -67,7 +67,7 @@ def StartLogging():
   now = datetime.now()
   global logfile
   logfile = '{}/Logs/SeratoCrateFolderSync-{}{}{}-{}{}.log'.format(database, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute))
-  logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+  logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', force=True)
   console = logging.StreamHandler()
   console.setLevel(logging.INFO)
   logging.getLogger('').addHandler(console)
@@ -77,7 +77,7 @@ def StartLogging():
 def FindMusic():
   serato_database = os.path.join(database, 'database V2')
   if os.path.exists(serato_database):
-    print('Scanning Serato database for music files')
+    print('Reading Serato database for music file location(s)')
     with open(serato_database, 'rb') as db:
       db_binary = db.read()
     db = decode(db_binary)
@@ -113,23 +113,24 @@ def SelectMusicPath(music_paths):
     return(music_paths[menu - 1])
 
 def startApp():
-  header()
+  #header()
+  print()
   if os.path.exists(database):
     logging.info('Serato database:  ' + database)
   else:
-    logging.error('Serato database:  ' + ' - NOT FOUND')
+    logging.error('Serato database:  ' + 'NOT FOUND')
   if os.path.exists(music):
     logging.info('Music Library:  ' + music)
   else:
-    logging.error('Music Library:  ' + ' - NOT FOUND')
+    logging.error('Music Library:  ' + 'NOT FOUND')
   if os.path.exists(config_location):
     logging.info('Configuration File:  ' + config_location)
   else:
-    logging.error('Configuration File:  ' + ' - NOT FOUND')
+    logging.error('Configuration File:  ' + 'NOT FOUND')
   if os.path.exists(logfile):
     logging.info('Log File:  ' + logfile)
   else:
-    logging.error('Log File:  ' + ' - NOT FOUND')
+    logging.error('Log File:  ' + 'NOT FOUND')
   print()
   logging.info('Include parent folder as crate:  ' + include_parent_crate)
   if test_mode == 'True':
