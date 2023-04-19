@@ -90,12 +90,12 @@ def FindMusic():
       music_paths = []
       music_paths.append(os.path.commonprefix(files))
       if len(music_paths) == 1:
-        logging.info('Music location found: {}'.format(music_paths[0].rstrip('/')))
+        logging.info('Music location found: {}'.format(os.path.normpath(music_paths[0])))
         time.sleep(1.5)
-        return(music_paths[0].rstrip('/'))
+        return(os.path.normpath(music_paths[0]))
       elif len(music_paths) > 1:
         logging.info('{} Music locations found'.format(len(music_paths)))
-        return(SelectMusicPath(music_paths).rstrip('/'))
+        return(SelectMusicPath(os.path.normpath(music_paths[0])))
         time.sleep(1.5)
       else:
         logging.error(' Music locations not found')
