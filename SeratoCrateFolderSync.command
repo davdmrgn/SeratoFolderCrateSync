@@ -8,7 +8,6 @@ import time
 from datetime import datetime
 import logging
 import shutil
-import filecmp
 import psutil
 
 def header():
@@ -138,6 +137,7 @@ def startApp():
   print()
   file_count = []
   folder_count = []
+  logging.debug('Enumerating files in {}'.format(music))
   for root, dirs, files in os.walk(music):
     if include_parent_crate == 'True':
       folder_count.append(root)
@@ -147,7 +147,8 @@ def startApp():
     for file in files:
       if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
         file_count.append(file)
-  logging.info('Folders: {}\nFiles: {}'.format(len(folder_count), len(file_count)))
+  logging.info('Folders: {}'.format(len(folder_count)))
+  logging.info('Files: {}'.format(len(file_count)))
   mainmenu(folder_count, file_count)
 
 def mainmenu(folder_count, file_count):
