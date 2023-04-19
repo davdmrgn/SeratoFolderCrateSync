@@ -383,7 +383,8 @@ def existing_crate(crate_path, music_folder):
       file_path = os.path.join(music_folder, file)[1:]
       file_binary = encode([('otrk', [('ptrk', file_path)])])
       if crate_data.find(file_binary) != -1:
-        logging.debug('{} exists in crate {}'.format(file, crate_name))
+        #logging.debug('{} exists in crate {}'.format(file, crate_name))
+        pass
       else:
         logging.info('Adding {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
         with open(crate_path, 'ab') as crate_file:
