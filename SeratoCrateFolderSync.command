@@ -137,7 +137,7 @@ def startApp():
   print()
   file_count = []
   folder_count = []
-  logging.debug('Enumerating files in {}'.format(music))
+  print('Loading files', end='\r')
   for root, dirs, files in os.walk(music):
     if include_parent_crate == 'True':
       folder_count.append(root)
@@ -147,7 +147,7 @@ def startApp():
     for file in files:
       if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
         file_count.append(file)
-  logging.info('Folders: {}'.format(len(folder_count)))
+  logging.info('Folders: {}   '.format(len(folder_count)))
   logging.info('Files: {}'.format(len(file_count)))
   mainmenu(folder_count, file_count)
 
@@ -425,7 +425,7 @@ def sync_crates():
       else:
         logging.info("\n{} updates. Test Mode ENABLED. Not backing up or applying changes.".format(updates))
     else:
-      logging.info('\nNo updates to database required')
+      logging.info('\nNo updates to subcrates required')
     time.sleep(4)
     logging.debug('Removing temporary database at {}'.format(temp_database))
     shutil.rmtree(temp_database)
