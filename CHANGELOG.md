@@ -1,6 +1,32 @@
 # Change Log
 
-## [0.03]((https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.03) - 2023-04-14
+## [0.04](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.04) - 2023-04-20
+
+### Added
+- Help
+- Backup only option
+- Restore from backup option
+- External drive support
+- Support for multiple Serato databases
+- Search all drives for `_Serato_` folder(s) at launch and menu reload
+- Ability to change `_Serato_` database without leaving application
+- Search `database V2` file for music location at launch
+- Show if an added file already exists in database V2 or not
+
+### Fixed
+- Change music location
+
+### Changed
+- Config file name and location (now stored in Serato Logs directory to support different settings for different databases/drives)
+- Clear screen on start
+- Consolidate logging to daily
+- Prompt before making changes; remove test mode
+- Parent crate toggle display
+- Function uses TitleCase to differentiate from built-in functions
+- Remove change database location option
+- No/Invalid entry for change music location reverts to default
+
+## [0.03](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.03) - 2023-04-14
 
 ### Added
 - Change music and library menu items functional
