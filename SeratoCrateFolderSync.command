@@ -139,7 +139,7 @@ def StartApp():
   else:
     logging.error('Log file:  ' + 'NOT FOUND')
   print()
-  logging.info('Include parent folder as crate:  ' + include_parent_crate)
+  logging.info('Include parent folder as crate:  {}'.format('ENABLED' if include_parent_crate == 'True' else 'DISABLED'))
   print()
   file_count = []
   folder_count = []
@@ -161,7 +161,7 @@ def MainMenu(folder_count, file_count):
   print()
   # print('L. Change _Serato_ database location')
   print('M. Change music location')
-  print('P. Toggle include parent folder as crate setting')
+  print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
   print()
   if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
     print('S. Synchronize music folders to Serato crates')
@@ -452,7 +452,7 @@ if database:
   StartLogging()
   music = FindMusic()
   if music:
-    # Paths + Config
+    ### Paths + Config
     script_path = os.path.dirname(__file__)
     homedir = os.path.expanduser('~')
     config = configparser.ConfigParser()
@@ -461,16 +461,12 @@ if database:
       config.read(config_location)
     else:
       include_parent_crate = 'True'
-      test_mode = 'True'
       config.add_section('crates')
       config.add_section('paths')
-      config.add_section('modes')
       config.set('crates', 'include_parent_crate', include_parent_crate)
-      config.set('modes', 'test_mode', test_mode)
       with open(config_location, 'w') as config_file:
         config.write(config_file)
     include_parent_crate = config['crates']['include_parent_crate']
-    test_mode = config['modes']['test_mode']
 
     StartApp()
   else:
