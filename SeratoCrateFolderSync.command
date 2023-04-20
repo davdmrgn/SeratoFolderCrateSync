@@ -391,7 +391,11 @@ def existing_crate(crate_path, music_folder):
     crate_data = f.read()
   for file in sorted(os.listdir(music_folder)):
     if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
-      file_path = os.path.join(music_folder, file)[1:]
+      if re.match('/Volumes', music_folder):
+        music_root = os.path.split(database)[0]
+        file_path = os.path.join(music_folder.replace(music_root, '')[1:], file)
+      else:
+        file_path = os.path.join(music_folder[1:], file)
       file_binary = encode([('otrk', [('ptrk', file_path)])])
       if crate_data.find(file_binary) != -1:
         #logging.debug('{} exists in crate {}'.format(file, crate_name))
