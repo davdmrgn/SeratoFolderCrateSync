@@ -183,10 +183,10 @@ def MainMenu(folder_count, file_count):
   backup_folder = os.path.join(database + 'Backups')
   if os.path.exists(backup_folder):
     print('R. Restore database from backup')
-  print()
   if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
-    print('S. Synchronize music folders to Serato crates')
     print('X. Rebuild subcrates from scratch')
+    print()
+    print('\033[1m' + 'S. Synchronize music folders to Serato crates' + '\033[0m')
     print()
   print('H. Help')
   print()
