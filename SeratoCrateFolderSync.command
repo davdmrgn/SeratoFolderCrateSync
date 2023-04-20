@@ -52,7 +52,7 @@ def SelectDatabase(serato_databases):
       return(serato_databases[menu - 1])
   else:
     logging.error('Serato database not found')
-    time.sleep(2)
+    time.sleep(1)
 
 ### Logging
 def StartLogging():
@@ -90,7 +90,7 @@ def FindMusic():
       music_paths = []
       music_paths.append(os.path.commonprefix(files))
       if len(music_paths) == 1:
-        #logging.info('Music location found: {}'.format(os.path.normpath(music_paths[0])))
+        logging.debug('Music location found: {}'.format(os.path.normpath(music_paths[0])))
         #time.sleep(1.5)
         return(os.path.normpath(music_paths[0]))
       elif len(music_paths) > 1:
@@ -98,8 +98,8 @@ def FindMusic():
         return(SelectMusicPath(os.path.normpath(music_paths[0])))
         #time.sleep(1.5)
       else:
-        logging.error(' Music locations not found')
-        time.sleep(2)
+        logging.error('Music location(s) not found')
+        time.sleep(1)
 
 ### Change music root to sync
 def SelectMusicPath(music_paths):
@@ -185,7 +185,7 @@ def MainMenu(folder_count, file_count):
     quit()
   else:
     print('Invalid option')
-    time.sleep(2)
+    time.sleep(1)
     StartApp()
   logging.debug('Session end')
 
@@ -209,12 +209,9 @@ def ChangeMusicLocation(value):
   value = str(input('\nEnter new music location: '))
   if os.path.exists(value):
     music = value
-    # config.set('paths', 'music', music)
-    # with open(config_location, 'w') as config_file:
-    #   config.write(config_file)
   else:
     logging.error('New music path not found')
-    time.sleep(2)
+    time.sleep(1)
   StartApp()
 
 def ToggleParentFolderAsCrate(value):

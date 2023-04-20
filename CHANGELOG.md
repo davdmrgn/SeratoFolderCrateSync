@@ -6,7 +6,8 @@
 - Backup option
 - External drive support
 - Support for multiple Serato databases
-- Search all drives for `_Serato_` folder(s) at launch
+- Search all drives for `_Serato_` folder(s) at launch and menu reload
+- Ability to change `_Serato_` database without leaving application
 - Search `database V2` file for music location at launch
 - Show if an added file already exists in database V2 or not
 
