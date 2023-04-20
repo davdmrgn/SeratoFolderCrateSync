@@ -5,6 +5,7 @@
 ### Added
 - Help
 - Backup only option
+- Restore from backup option
 - External drive support
 - Support for multiple Serato databases
 - Search all drives for `_Serato_` folder(s) at launch and menu reload

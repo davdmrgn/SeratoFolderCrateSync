@@ -47,8 +47,19 @@ def SelectDatabase(serato_databases):
     print()
     for number, path in enumerate(serato_databases):
       print('{}. {}'.format(number + 1, path))
-    menu = int(input('\nSelect an option: '))
-    if menu > 0 and menu <= len(serato_databases):  
+    while True:
+      menu = input('\nSelect an option: ')
+      try:
+        if menu == '':
+          menu = 0
+        else:
+          menu = int(menu)
+      except ValueError:
+        logging.error('Invalid option')
+        time.sleep(1)
+      else:
+        break
+    if menu > 0 and menu <= len(serato_databases):
       return(serato_databases[menu - 1])
   else:
     logging.error('Serato database not found')
@@ -108,8 +119,19 @@ def SelectMusicPath(music_paths):
   print()
   for number, path in enumerate(music_paths):
     print('  {}. {}'.format(number + 1, path))
-  menu = int(input('\nSelect an option: '))
-  if menu > 0 and menu <= len(music_paths):  
+  while True:
+    menu = input('\nSelect an option: ')
+    try:
+      if menu == '':
+        menu = 0
+      else:
+        menu = int(menu)
+    except ValueError:
+      logging.error('Invalid option')
+      time.sleep(1)
+    else:
+      break
+  if menu > 0 and menu <= len(music_paths):
     return(music_paths[menu - 1])
 
 def StartApp():
@@ -158,10 +180,13 @@ def MainMenu(folder_count, file_count):
     print('D. Change _Serato_ database ({} found)'.format(len(serato_database_count)))
   print('M. Change music sync location')
   print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
+  backup_folder = os.path.join(database + 'Backups')
+  if os.path.exists(backup_folder):
+    print('R. Restore database from backup')
   print()
   if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
-    print('X. Rebuild subcrates from scratch')
     print('S. Synchronize music folders to Serato crates')
+    print('X. Rebuild subcrates from scratch')
     print()
   print('H. Help')
   print()
@@ -181,6 +206,8 @@ def MainMenu(folder_count, file_count):
   elif menu == 'b':
     BackupDatabase()
     StartApp()
+  elif menu == 'r':
+    RestoreDatabase()
   elif menu == 'd':
     ChangeDatabase(database)
   elif menu == 'h':
@@ -392,6 +419,56 @@ def BackupDatabase():
   except:
     logging.exception('Error backing up database')
 
+### Restore database backup
+def RestoreDatabase():
+  backup_folder = os.path.join(database + 'Backups')
+  if os.path.exists(backup_folder):
+    backups = []
+    for b in os.listdir(backup_folder):
+      full_path = os.path.join(backup_folder, b)
+      if os.path.isdir(full_path):
+        backups.append(full_path)
+    if len(backups) > 0:
+      print('\nRestore from backup\n')
+      backups.sort()
+      for number, path in enumerate(backups):
+        print('{}. {}'.format(number + 1, path))
+      while True:
+        menu = input('\nSelect a backup to restore: ')
+        try:
+          if menu == '':
+            menu = 0
+          else:
+            menu = int(menu)
+        except ValueError:
+          logging.error('Invalid option')
+          time.sleep(1)
+        else:
+          break
+      if menu > 0 and menu <= len(backups):
+        print(backups[menu - 1])
+        restore = backups[menu - 1]
+        if os.path.exists(restore):
+          answer = str(input('\nEnter [y]es to backup current database and restore\n {}: '.format(restore)).lower())
+          if re.match('y|yes', answer):
+            try:
+              BackupDatabase()
+              subcrates_path = os.path.join(database, 'Subcrates')
+              logging.debug('Restore: Removing subcrates path {}'.format(subcrates_path))
+              shutil.rmtree(subcrates_path)
+              logging.info('Restoring from backup: {}'.format(restore))
+              shutil.copytree(restore, database, dirs_exist_ok=True)
+              logging.info('Restore complete')
+            except:
+              logging.error('Error in RestoreDatabase')
+          else:
+            print('\nNOPE')
+      else:
+        pass
+  else:
+    logging.error('Backup folder does not exist')
+  StartApp()
+
 ### Move temp database to Serato database location
 def MoveDatabase(temp_database):
   try:
@@ -413,7 +490,7 @@ def SyncCrates():
       print()
       logging.info('updates'.format(updates))
       #time.sleep(1)
-      menu = str(input('\nEnter [y|es] to apply changes: ').lower())
+      menu = str(input('\nEnter [y]es to apply changes: ').lower())
       if menu == 'y':
         BackupDatabase()
         MoveDatabase(temp_database)

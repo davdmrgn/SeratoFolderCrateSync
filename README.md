@@ -19,11 +19,11 @@ Syncrhonize music folders to Serato crates
 
 ## How does it work?
 
-- TEST mode enabled by default (changes made to temporary directory and deleted - changes show on screen)
 - Script will:
   - Search for `_Serato_` database directories
   - Scan songs in `database V2` file to find song locations
   - Scan folders and create/update crates matching your folder structure
+  - Only apply changes to crate files with your confirmation
 - You may toggle the option to include the parent folder as a parent crate
 - New crates will be created; existing crates will add new songs
 - If any updates, existing crates will be backed up to `_Serato_Backups`
@@ -31,12 +31,11 @@ Syncrhonize music folders to Serato crates
 - This script only updates files in `/Subcrates` directory; does not modify:
   - `database V2` file
   - Smart crates
-- Changes and script preferences are saved to a log file in `_Serato_/Logs`
+- Script preferences are saved to a log file in `_Serato_/Logs`
 
 ## Limitations
 
 - Not tested on Windows
-- WIP: External drives/libraries
 - Custom crate columns not yet supported
 - Will not delete crates (recommend deleting crates manually in Serato)
 
