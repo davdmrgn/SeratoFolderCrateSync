@@ -84,6 +84,7 @@ def FindMusic():
       file_base = serato_database.split('_Serato_')[0]
     else:
       file_base = '/'
+    global files
     files = []
     for line in db:
       if line[0] == 'otrk':
@@ -393,7 +394,10 @@ def existing_crate(crate_path, music_folder):
         #logging.debug('{} exists in crate {}'.format(file, crate_name))
         pass
       else:
-        logging.info('Adding {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
+        if '/' + file_path in files:
+          logging.info('Adding existing file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
+        else:
+          logging.info('Adding new file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
         with open(crate_path, 'ab') as crate_file:
           crate_file.write(file_binary)
         updates += 1
