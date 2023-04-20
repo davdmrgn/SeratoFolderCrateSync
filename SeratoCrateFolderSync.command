@@ -19,8 +19,8 @@ def Header():
 
 ### Search disks for Serato databases
 def SearchDatabase():
-  Header()
-  print('Searching for Serato database')
+  # Header()
+  # print('Searching for Serato database')
   partitions = psutil.disk_partitions()
   database_search = []
   for p in partitions:
@@ -36,16 +36,16 @@ def SearchDatabase():
     if os.path.exists(database_path):
       serato_databases.append(database_path)
   if len(serato_databases) == 1:
-    logging.info('Serato database found: {}'.format(serato_databases[0]))
-    time.sleep(1.5)
+    # print('Serato database found: {}'.format(serato_databases[0]))
+    # time.sleep(1.5)
     return(serato_databases[0])
   elif len(serato_databases) > 1:
-    logging.info('{} Serato databases found'.format(len(serato_databases)))
+    print('{} Serato databases found'.format(len(serato_databases)))
     return(SelectDatabase(serato_databases))
-    time.sleep(1.5)
+    # time.sleep(1.5)
   else:
     logging.error('Serato database not found')
-    time.sleep(1.5)
+    time.sleep(2)
 
 ### Select a database if more than one exists
 def SelectDatabase(serato_databases):
@@ -106,7 +106,7 @@ def FindMusic():
         #time.sleep(1.5)
       else:
         logging.error(' Music locations not found')
-        time.sleep(1.5)
+        time.sleep(2)
 
 ### Change music root to sync
 def SelectMusicPath(music_paths):
@@ -120,7 +120,7 @@ def SelectMusicPath(music_paths):
     return(music_paths[menu - 1])
 
 def StartApp():
-  #Header()
+  Header()
   print()
   if os.path.exists(database):
     logging.info('Serato database:  ' + database)
@@ -159,6 +159,7 @@ def StartApp():
 
 def MainMenu(folder_count, file_count):
   print()
+  print('B. Back up database')
   print('M. Change music location')
   print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
   print()
@@ -179,11 +180,14 @@ def MainMenu(folder_count, file_count):
     ChangeMusicLocation(music)
   elif menu == 'p':
     ToggleParentFolderAsCrate(include_parent_crate)
+  elif menu == 'b':
+    BackupDatabase()
+    StartApp()
   elif menu == 'q':
     quit()
   else:
     print('Invalid option')
-    time.sleep(1)
+    time.sleep(2)
     StartApp()
   logging.debug('Session end')
 
@@ -369,7 +373,7 @@ def BackupDatabase():
     now = datetime.now()
     backup_folder = database + 'Backups/' + '_Serato_{}{}{}-{}{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute), '{:02d}'.format(now.second))
     print()
-    logging.info('updates. Backing up database at {} to {}'.format(updates, database, backup_folder))
+    logging.info('Backing up database at {} to {}'.format(database, backup_folder))
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
     shutil.copytree(database, backup_folder, ignore=copy_ignore)
   except:
@@ -403,7 +407,7 @@ def SyncCrates():
       else:
         logging.info('Not applying changes')
     else:
-      logging.info('\nNo subcrate updates required')
+      logging.info('\nNo crate updates required')
     #time.sleep(1)
     logging.debug('Removing temporary database at {}'.format(temp_database))
     shutil.rmtree(temp_database)

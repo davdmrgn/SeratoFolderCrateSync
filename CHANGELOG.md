@@ -3,6 +3,7 @@
 ## [0.04](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.04) - 2023-04-20
 
 ### Added
+- Backup option
 - External drive support
 - Support for multiple Serato databases
 - Search all drives for `_Serato_` folder(s) at launch
