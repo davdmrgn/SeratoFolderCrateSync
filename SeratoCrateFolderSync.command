@@ -371,7 +371,10 @@ def build_crate(crate_path, music_folder):
         file_path = os.path.join(music_folder.replace(music_root, '')[1:], file)
       else:
         file_path = os.path.join(music_folder[1:], file)
-      logging.info('Adding {} to {}'.format(file_path, crate_name.replace('%%', u' \u2771 ')))
+      if '/' + file_path in files:
+        logging.info('Adding existing file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
+      else:
+        logging.info('Adding new file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
       crate_data += encode([('otrk', [('ptrk', file_path)])])
       updates += 1
   if len(crate_data) > 525:
