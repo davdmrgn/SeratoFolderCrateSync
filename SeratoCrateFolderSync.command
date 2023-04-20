@@ -17,10 +17,10 @@ def Header():
   print('╚══════════════════════════════════════════════════════════════════╝')
   print()
 
-# Search disks for Serato databases
+### Search disks for Serato databases
 def SearchDatabase():
   Header()
-  print('Scanning for Serato database')
+  print('Searching for Serato database')
   partitions = psutil.disk_partitions()
   database_search = []
   for p in partitions:
@@ -47,7 +47,7 @@ def SearchDatabase():
     logging.error('Serato database not found')
     time.sleep(1.5)
 
-# Select a database if more than one exists
+### Select a database if more than one exists
 def SelectDatabase(serato_databases):
   print()
   print('Select the database')
@@ -61,18 +61,18 @@ def SelectDatabase(serato_databases):
   except:
     pass
 
+### Logging
 def StartLogging():
-  ### Logging
   now = datetime.now()
   global logfile
-  logfile = '{}/Logs/SeratoCrateFolderSync-{}{}{}-{}{}.log'.format(database, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute))
+  logfile = '{}/Logs/SeratoCrateFolderSync-{}{}{}.log'.format(database, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day))
   logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', force=True)
   console = logging.StreamHandler()
   console.setLevel(logging.INFO)
   logging.getLogger('').addHandler(console)
   logging.debug('Session start')
 
-# Find music location from Serato database
+### Find music location from Serato database
 def FindMusic():
   serato_database = os.path.join(database, 'database V2')
   if os.path.exists(serato_database):
@@ -108,6 +108,7 @@ def FindMusic():
         logging.error(' Music locations not found')
         time.sleep(1.5)
 
+### Change music root to sync
 def SelectMusicPath(music_paths):
   print()
   print('Select music path')
@@ -160,7 +161,7 @@ def StartApp():
 
 def MainMenu(folder_count, file_count):
   print()
-  print('L. Change _Serato_ database location')
+  # print('L. Change _Serato_ database location')
   print('M. Change music location')
   print('P. Toggle include parent folder as crate setting')
   print('T. Toggle TEST mode (run without making changes)')
@@ -175,13 +176,13 @@ def MainMenu(folder_count, file_count):
   if menu == 's':
     rebuild = 'False'
     SyncCrates()
-    if test_mode == 'True':
-      StartApp()
+    # if test_mode == 'True':
+    #   StartApp()
   elif menu == 'r':
     rebuild = 'True'
     SyncCrates()
-    if test_mode == 'True':
-      StartApp()
+    # if test_mode == 'True':
+    #   StartApp()
   elif menu == 'l':
     ChangeDatabaseLocation(database)
   elif menu == 'm':
@@ -432,6 +433,7 @@ def MoveDatabase(temp_database):
   except:
     logging.exception('Error moving database')
 
+### Payload
 def SyncCrates():
   try:
     global updates
@@ -441,11 +443,14 @@ def SyncCrates():
     music_folders = MusicFolderScan()
     CrateCheck(temp_database, music_folders)
     if updates > 0:
-      if test_mode == 'False':
+      logging.info('\n{} updates')
+      time.sleep(1)
+      menu = str(input('\nEnter [y|es] to apply changes: ').lower())
+      if menu == 'y':
         BackupDatabase()
         MoveDatabase(temp_database)
       else:
-        logging.info("\n{} updates. Test Mode ENABLED. Not backing up or applying changes.".format(updates))
+        logging.info('Not applying changes')
     else:
       logging.info('\nNo updates to subcrates required')
     time.sleep(4)
@@ -454,13 +459,14 @@ def SyncCrates():
   except:
     logging.exception('We ran into a problem at sync_crates')
 
+### Entrypoint
 os.system('clear')
 database = SearchDatabase()
 if database:
   StartLogging()
   music = FindMusic()
   if music:
-    ### Paths + Config
+    # Paths + Config
     script_path = os.path.dirname(__file__)
     homedir = os.path.expanduser('~')
     config = configparser.ConfigParser()
