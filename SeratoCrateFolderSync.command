@@ -76,7 +76,7 @@ def StartLogging():
 def FindMusic():
   serato_database = os.path.join(database, 'database V2')
   if os.path.exists(serato_database):
-    print('Reading Serato database for music file location(s)')
+    print('Reading Serato database for music location(s)')
     with open(serato_database, 'rb') as db:
       db_binary = db.read()
     db = Decode(db_binary)
@@ -97,13 +97,13 @@ def FindMusic():
       music_paths = []
       music_paths.append(os.path.commonprefix(files))
       if len(music_paths) == 1:
-        logging.info('Music location found: {}'.format(os.path.normpath(music_paths[0])))
-        time.sleep(1.5)
+        #logging.info('Music location found: {}'.format(os.path.normpath(music_paths[0])))
+        #time.sleep(1.5)
         return(os.path.normpath(music_paths[0]))
       elif len(music_paths) > 1:
         logging.info('{} Music locations found'.format(len(music_paths)))
         return(SelectMusicPath(os.path.normpath(music_paths[0])))
-        time.sleep(1.5)
+        #time.sleep(1.5)
       else:
         logging.error(' Music locations not found')
         time.sleep(1.5)
@@ -127,21 +127,19 @@ def StartApp():
   else:
     logging.error('Serato database:  ' + 'NOT FOUND')
   if os.path.exists(music):
-    logging.info('Music Library:  ' + music)
+    logging.info('Music location:  ' + music)
   else:
-    logging.error('Music Library:  ' + 'NOT FOUND')
+    logging.error('Music location:  ' + 'NOT FOUND')
   if os.path.exists(config_location):
-    logging.info('Configuration File:  ' + config_location)
+    logging.info('Configuration file:  ' + config_location)
   else:
-    logging.error('Configuration File:  ' + 'NOT FOUND')
+    logging.error('Configuration file:  ' + 'NOT FOUND')
   if os.path.exists(logfile):
-    logging.info('Log File:  ' + logfile)
+    logging.info('Log file:  ' + logfile)
   else:
-    logging.error('Log File:  ' + 'NOT FOUND')
+    logging.error('Log file:  ' + 'NOT FOUND')
   print()
   logging.info('Include parent folder as crate:  ' + include_parent_crate)
-  if test_mode == 'True':
-    logging.info('Test Mode: ENABLED'.format(test_mode))
   print()
   file_count = []
   folder_count = []
@@ -164,7 +162,6 @@ def MainMenu(folder_count, file_count):
   # print('L. Change _Serato_ database location')
   print('M. Change music location')
   print('P. Toggle include parent folder as crate setting')
-  print('T. Toggle TEST mode (run without making changes)')
   print()
   if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
     print('S. Synchronize music folders to Serato crates')
@@ -250,17 +247,6 @@ def ToggleParentFolderAsCrate(value):
   config.set('crates', 'include_parent_crate', include_parent_crate)
   with open(config_location, 'w') as config_file:
     config.write(config_file)
-  StartApp()
-
-def ToggleTestMode():
-  global test_mode
-  if test_mode == 'True':
-    test_mode = 'False'
-    logging.info('Test Mode: DISABLED')
-  else:
-    test_mode = 'True'
-    logging.info('Test Mode: ENABLED')
-  time.sleep(1)
   StartApp()
 
 ### Convert plain text list to binary crate file
@@ -443,8 +429,8 @@ def SyncCrates():
     music_folders = MusicFolderScan()
     CrateCheck(temp_database, music_folders)
     if updates > 0:
-      logging.info('\n{} updates')
-      time.sleep(1)
+      logging.info('\n{} updates'.format(updates))
+      #time.sleep(1)
       menu = str(input('\nEnter [y|es] to apply changes: ').lower())
       if menu == 'y':
         BackupDatabase()
@@ -452,8 +438,8 @@ def SyncCrates():
       else:
         logging.info('Not applying changes')
     else:
-      logging.info('\nNo updates to subcrates required')
-    time.sleep(4)
+      logging.info('\nNo subcrate updates required')
+    #time.sleep(1)
     logging.debug('Removing temporary database at {}'.format(temp_database))
     shutil.rmtree(temp_database)
   except:
