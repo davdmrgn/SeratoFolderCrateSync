@@ -159,7 +159,6 @@ def StartApp():
 
 def MainMenu(folder_count, file_count):
   print()
-  # print('L. Change _Serato_ database location')
   print('M. Change music location')
   print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
   print()
@@ -173,21 +172,13 @@ def MainMenu(folder_count, file_count):
   if menu == 's':
     rebuild = 'False'
     SyncCrates()
-    # if test_mode == 'True':
-    #   StartApp()
   elif menu == 'r':
     rebuild = 'True'
     SyncCrates()
-    # if test_mode == 'True':
-    #   StartApp()
-  elif menu == 'l':
-    ChangeDatabaseLocation(database)
   elif menu == 'm':
     ChangeMusicLocation(music)
   elif menu == 'p':
     ToggleParentFolderAsCrate(include_parent_crate)
-  elif menu == 't':
-    ToggleTestMode()
   elif menu == 'q':
     quit()
   else:
@@ -196,46 +187,18 @@ def MainMenu(folder_count, file_count):
     StartApp()
   logging.debug('Session end')
 
-def ChangeDatabaseLocation(value):
-  global database
-  logging.info('Current _Serato_ location:   ', value)
-  value = str(input('\nEnter new database location: '))
-  if os.path.exists(value):
-    database = value
-    config.set('paths', 'database', database)
-    with open(config_location, 'w') as config_file:
-      config.write(config_file)
-  elif os.path.exists(os.path.join(homedir, value)):
-    database = os.path.join(homedir, value)
-  elif value == '':
-    logging.info('Setting database back to default')
-    time.sleep(2)
-    database = homedir + config['paths']['database']
-  else:
-    logging.error('New database path not found')
-    time.sleep(2)
-    ChangeDatabaseLocation(database)
-  StartApp()
-
 def ChangeMusicLocation(value):
   global music
   logging.info('Current Music location:   {}'.format(value))
   value = str(input('\nEnter new music location: '))
   if os.path.exists(value):
     music = value
-    config.set('paths', 'music', music)
-    with open(config_location, 'w') as config_file:
-      config.write(config_file)
-  elif os.path.exists(os.path.join(homedir, value)):
-    music = os.path.join(homedir, value)
-  elif value == '':
-    logging.info('Setting music back to default')
-    time.sleep(2)
-    music = homedir + config['paths']['music']
+    # config.set('paths', 'music', music)
+    # with open(config_location, 'w') as config_file:
+    #   config.write(config_file)
   else:
     logging.error('New music path not found')
     time.sleep(2)
-    ChangeMusicLocation(music)
   StartApp()
 
 def ToggleParentFolderAsCrate(value):
@@ -405,7 +368,8 @@ def BackupDatabase():
   try:
     now = datetime.now()
     backup_folder = database + 'Backups/' + '_Serato_{}{}{}-{}{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute), '{:02d}'.format(now.second))
-    logging.info('\n{} updates. Backing up database at {} to {}'.format(updates, database, backup_folder))
+    print()
+    logging.info('updates. Backing up database at {} to {}'.format(updates, database, backup_folder))
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
     shutil.copytree(database, backup_folder, ignore=copy_ignore)
   except:
@@ -429,7 +393,8 @@ def SyncCrates():
     music_folders = MusicFolderScan()
     CrateCheck(temp_database, music_folders)
     if updates > 0:
-      logging.info('\n{} updates'.format(updates))
+      print()
+      logging.info('updates'.format(updates))
       #time.sleep(1)
       menu = str(input('\nEnter [y|es] to apply changes: ').lower())
       if menu == 'y':
