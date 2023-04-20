@@ -219,7 +219,7 @@ def ChangeDatabaseLocation(value):
 
 def ChangeMusicLocation(value):
   global music
-  logging.info('Current Music location:   ', value)
+  logging.info('Current Music location:   {}'.format(value))
   value = str(input('\nEnter new music location: '))
   if os.path.exists(value):
     music = value
