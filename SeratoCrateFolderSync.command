@@ -19,7 +19,6 @@ def Header():
 
 ### Search disks for Serato databases
 def SearchDatabase():
-  # Header()
   # print('Searching for Serato database')
   partitions = psutil.disk_partitions()
   database_search = []
@@ -35,31 +34,25 @@ def SearchDatabase():
     database_path = os.path.join(d, '_Serato_')
     if os.path.exists(database_path):
       serato_databases.append(database_path)
+  return(serato_databases)
+
+### Select a database if more than one exists
+def SelectDatabase(serato_databases):
   if len(serato_databases) == 1:
     # print('Serato database found: {}'.format(serato_databases[0]))
     # time.sleep(1.5)
     return(serato_databases[0])
   elif len(serato_databases) > 1:
     print('{} Serato databases found'.format(len(serato_databases)))
-    return(SelectDatabase(serato_databases))
-    # time.sleep(1.5)
-  else:
-    logging.error('Serato database not found')
-    time.sleep(2)
-
-### Select a database if more than one exists
-def SelectDatabase(serato_databases):
-  print()
-  print('Select the database')
-  print()
-  for number, path in enumerate(serato_databases):
-    print('  {}. {}'.format(number + 1, path))
-  try:
+    print()
+    for number, path in enumerate(serato_databases):
+      print('{}. {}'.format(number + 1, path))
     menu = int(input('\nSelect an option: '))
     if menu > 0 and menu <= len(serato_databases):  
       return(serato_databases[menu - 1])
-  except:
-    pass
+  else:
+    logging.error('Serato database not found')
+    time.sleep(2)
 
 ### Logging
 def StartLogging():
@@ -160,7 +153,10 @@ def StartApp():
 def MainMenu(folder_count, file_count):
   print()
   print('B. Back up database')
-  print('M. Change music location')
+  serato_database_count = SearchDatabase()
+  if len(serato_database_count) > 1:
+    print('D. Change _Serato_ database ({} found)'.format(len(serato_database_count)))
+  print('M. Change music sync location')
   print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
   print()
   if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
@@ -183,6 +179,8 @@ def MainMenu(folder_count, file_count):
   elif menu == 'b':
     BackupDatabase()
     StartApp()
+  elif menu == 'd':
+    ChangeDatabase(database)
   elif menu == 'q':
     quit()
   else:
@@ -190,6 +188,20 @@ def MainMenu(folder_count, file_count):
     time.sleep(2)
     StartApp()
   logging.debug('Session end')
+
+def ChangeDatabase(value):
+  new_databases = SearchDatabase()
+  new_database = SelectDatabase(new_databases)
+  if new_database != value:
+    global database
+    database = new_database
+    new_music = FindMusic()
+    if new_music:
+      global music
+      music = new_music
+    else:
+      ChangeMusicLocation(music)
+  StartApp()
 
 def ChangeMusicLocation(value):
   global music
@@ -416,7 +428,8 @@ def SyncCrates():
 
 ### Entrypoint
 os.system('clear')
-database = SearchDatabase()
+databases = SearchDatabase()
+database = SelectDatabase(databases)
 if database:
   StartLogging()
   music = FindMusic()
