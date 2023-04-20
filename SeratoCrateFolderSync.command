@@ -160,16 +160,18 @@ def MainMenu(folder_count, file_count):
   print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
   print()
   if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
+    print('X. Rebuild subcrates from scratch')
     print('S. Synchronize music folders to Serato crates')
-    print('R. Rebuild subcrates from scratch')
     print()
+  print('H. Help')
+  print()
   print('Q. Quit')
   menu = str(input('\nSelect an option: ').lower())
   global rebuild
   if menu == 's':
     rebuild = 'False'
     SyncCrates()
-  elif menu == 'r':
+  elif menu == 'x':
     rebuild = 'True'
     SyncCrates()
   elif menu == 'm':
@@ -181,6 +183,8 @@ def MainMenu(folder_count, file_count):
     StartApp()
   elif menu == 'd':
     ChangeDatabase(database)
+  elif menu == 'h':
+    Help()
   elif menu == 'q':
     quit()
   else:
@@ -422,6 +426,21 @@ def SyncCrates():
     shutil.rmtree(temp_database)
   except:
     logging.exception('We ran into a problem at sync_crates')
+
+def Help():
+  print('\n' + '\033[1m' + 'Serato Crate Folder Sync'+ '\033[0m' + '\n\n\tThis tool allows you to take a folder of music and create crates/subcrates in Serato DJ.\n')
+  print('\n' + '\033[1m' + 'How does it work?' + '\033[0m' + '\n\n\tThis program will create new or update existing crate files in _Serato_/Subcrates with the music folder\n\tyou choose.\n\n\tYour database V2 file is scanned to find folders where your music is located.\n\n\tNew files are added to _Serato_/Subcrates/*.crate files. These changes are picked up by Serato DJ and added to \n\tyour database by Serato DJ.')
+  print('\n' + '\033[1m' + 'Options' + '\033[0m' + '\n')
+  print('\tB\tBackup your _Serato_ database to a _Serato_Backups folder. Note: This will not backup any recordings.\n')
+  print('\tD\tChange to another _Serato_ database folder (only available when multiple databases found - usually with \n\t\tinternal and external drives).\n')
+  print('\tM\tSet the folder where the music is you want to add to Serato.\n')
+  print('\tP\tSet parent folder as a parent crate. This is useful for external drives; it keeps the crates on the external \n\t\tseparate from internal crates.\n')
+  print('\tX\tRebuild subcrates will overwrite existing crate files with the music found in the selected folders.\n')
+  print('\tS\tSynchronize your music folders to Serato crates. It will display the actions it will take a prompt you before \n\t\tapplying changes. Before applying changes, a backup of your existing _Serato_ folder will be taken.\n')
+  print('\n' + '\033[1m' + 'Additional Information' + '\033[0m' + '\n')
+  print('\tLogs\tLog files are stored in the _Serato_/Logs folder. They contain additonal information for troubleshooting.\n')
+  input('\n\nPress ENTER to continue')
+  StartApp()
 
 ### Entrypoint
 os.system('clear')
