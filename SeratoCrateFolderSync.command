@@ -80,12 +80,18 @@ def FindMusic():
     with open(serato_database, 'rb') as db:
       db_binary = db.read()
     db = decode(db_binary)
+    if re.match('/Volumes', serato_database):
+      file_base = serato_database.split('_Serato_')[0]
+    else:
+      file_base = '/'
     files = []
-    for file in db:
-      try:
-        files.append(os.path.join('/', file[1][1][1]))
-      except:
-        pass
+    for line in db:
+      if line[0] == 'otrk':
+        try:
+          #print('Adding: {}'.format(os.path.join(file_base, line[1][1][1])))
+          files.append(os.path.join(file_base, line[1][1][1]))
+        except:
+          pass
     if len(files) > 1:
       music_paths = []
       music_paths.append(os.path.commonprefix(files))
@@ -287,21 +293,18 @@ def decode(data):
       key = data[i:i+4].decode('utf-8')
       length = struct.unpack('>I', data[i+4:i+8])[0]
       binary = data[i+8:i+8 + length]
-      if re.match('osrt|ovct|otrk', key):
-        value = decode(binary)
-        result.append((key, value))
-      elif re.match('brev', key):
-        if binary == b'\x00':
-          value = ''
-        else:
-          value = decode(binary)
-        result.append((key, value))
+      #print('key is {}\tlength is {}\tbinary is {}'.format(key, length, binary))
+      if length < 4:
+        value = binary.decode('utf-8')
       else:
-        value = binary.decode('utf-16-be')
-        result.append((key, value))
+        if re.match('osrt|ovct|otrk', key):
+          value = decode(binary)
+        else:
+          value = binary.decode('utf-16-be', errors='ignore')
       i += 8 + length
+      result.append((key, value))
     except:
-      #logging.error('DECODE ERROR: i: {}, key: {}, length: {}, binary: {}, value: {}'.format(i, key, length, binary, value))
+      logging.debug('DECODE ERROR: i: {}, key: {}, length: {}, binary: {}, value: {}'.format(i, key, length, binary, value))
       break
   return(result)
 
@@ -362,7 +365,11 @@ def build_crate(crate_path, music_folder):
   crate_data += encode([('ovct', [('tvcn', 'song'), ('tvcw', '0')]), ('ovct', [('tvcn', 'artist'), ('tvcw', '0')]), ('ovct', [('tvcn', 'bpm'), ('tvcw', '0')]), ('ovct', [('tvcn', 'key'), ('tvcw', '0')]), ('ovct', [('tvcn', 'year'), ('tvcw', '0')]), ('ovct', [('tvcn', 'grouping'), ('tvcw', '0')]), ('ovct', [('tvcn', 'bitrate'), ('tvcw', '0')]), ('ovct', [('tvcn', 'undef'), ('tvcw', '0')]), ('ovct', [('tvcn', 'added'), ('tvcw', '0')]), ('ovct', [('tvcn', 'composer'), ('tvcw', '0')]), ('ovct', [('tvcn', 'comment'), ('tvcw', '0')]), ('ovct', [('tvcn', 'location'), ('tvcw', '0')]), ('ovct', [('tvcn', 'filename'), ('tvcw', '0')]), ('ovct', [('tvcn', 'genre'), ('tvcw', '0')]), ('ovct', [('tvcn', 'album'), ('tvcw', '0')]), ('ovct', [('tvcn', 'label'), ('tvcw', '0')])])
   for file in sorted(os.listdir(music_folder)):
     if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
-      file_path = os.path.join(music_folder[1:], file)
+      if re.match('/Volumes', music_folder):
+        music_root = os.path.split(database)[0]
+        file_path = os.path.join(music_folder.replace(music_root, '')[1:], file)
+      else:
+        file_path = os.path.join(music_folder[1:], file)
       logging.info('Adding {} to {}'.format(file_path, crate_name.replace('%%', u' \u2771 ')))
       crate_data += encode([('otrk', [('ptrk', file_path)])])
       updates += 1
