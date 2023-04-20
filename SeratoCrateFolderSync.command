@@ -369,9 +369,11 @@ def build_crate(crate_path, music_folder):
       if re.match('/Volumes', music_folder):
         music_root = os.path.split(database)[0]
         file_path = os.path.join(music_folder.replace(music_root, '')[1:], file)
+        file_full_path = os.path.join(music_root, file_path)
       else:
         file_path = os.path.join(music_folder[1:], file)
-      if '/' + file_path in files:
+        file_full_path = '/' + file_path
+      if file_full_path in files:
         logging.info('Adding existing file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
       else:
         logging.info('Adding new file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
@@ -394,14 +396,16 @@ def existing_crate(crate_path, music_folder):
       if re.match('/Volumes', music_folder):
         music_root = os.path.split(database)[0]
         file_path = os.path.join(music_folder.replace(music_root, '')[1:], file)
+        file_full_path = os.path.join(music_root, file_path)
       else:
         file_path = os.path.join(music_folder[1:], file)
+        file_full_path = '/' + file_path
       file_binary = encode([('otrk', [('ptrk', file_path)])])
       if crate_data.find(file_binary) != -1:
         #logging.debug('{} exists in crate {}'.format(file, crate_name))
         pass
       else:
-        if '/' + file_path in files:
+        if file_full_path in files:
           logging.info('Adding existing file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
         else:
           logging.info('Adding new file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
