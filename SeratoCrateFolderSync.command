@@ -488,17 +488,20 @@ def SyncCrates():
     CrateCheck(temp_database, music_folders)
     if updates > 0:
       print()
-      logging.info('updates'.format(updates))
+      logging.info('{} updates'.format(updates))
       #time.sleep(1)
       menu = str(input('\nEnter [y]es to apply changes: ').lower())
-      if menu == 'y':
+      if re.match('y|yes', menu.lower()):
         BackupDatabase()
         MoveDatabase(temp_database)
+        print('Done')
+        time.sleep(1)
       else:
         logging.info('Not applying changes')
+        StartApp()
     else:
       logging.info('\nNo crate updates required')
-    #time.sleep(1)
+      time.sleep(1)
     logging.debug('Removing temporary database at {}'.format(temp_database))
     shutil.rmtree(temp_database)
   except:
