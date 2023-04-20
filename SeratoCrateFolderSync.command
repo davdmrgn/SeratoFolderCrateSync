@@ -269,15 +269,15 @@ def Encode(data):
   i = 0
   for line in data:
     try:
-      key = line[0].Encode('utf-8')
+      key = line[0].encode('utf-8')
       if isinstance(line[1], list):
         sub_list = line[1][0]
-        sub_key = sub_list[0].Encode('utf-8')
-        sub_value = sub_list[1].Encode('utf-16-be')
+        sub_key = sub_list[0].encode('utf-8')
+        sub_value = sub_list[1].encode('utf-16-be')
         sub_length = struct.pack('>I', len(sub_value))
         value = (sub_key + sub_length + sub_value)
       else:
-        value = line[1].Encode('utf-16-be')
+        value = line[1].encode('utf-16-be')
       length = struct.pack('>I', len(value))
       result += (key + length + value)
       i += 1
@@ -292,17 +292,17 @@ def Decode(data):
   i = 0
   while i < len(data):
     try:
-      key = data[i:i+4].Decode('utf-8')
+      key = data[i:i+4].decode('utf-8')
       length = struct.unpack('>I', data[i+4:i+8])[0]
       binary = data[i+8:i+8 + length]
       #print('key is {}\tlength is {}\tbinary is {}'.format(key, length, binary))
       if length < 4:
-        value = binary.Decode('utf-8')
+        value = binary.decode('utf-8')
       else:
         if re.match('osrt|ovct|otrk', key):
           value = Decode(binary)
         else:
-          value = binary.Decode('utf-16-be', errors='ignore')
+          value = binary.decode('utf-16-be', errors='ignore')
       i += 8 + length
       result.append((key, value))
     except:
