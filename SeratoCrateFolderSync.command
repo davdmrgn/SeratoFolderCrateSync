@@ -8,7 +8,6 @@ import time
 from datetime import datetime
 import logging
 import shutil
-import psutil
 
 def Header():
   print()
@@ -20,11 +19,10 @@ def Header():
 ### Search disks for Serato databases
 def SearchDatabase():
   # print('Searching for Serato database')
-  partitions = psutil.disk_partitions()
+  volumes = os.listdir('/Volumes')
   database_search = []
-  for p in partitions:
-    if not re.search('dontbrowse', p.opts):
-      database_search.append(p.mountpoint)
+  for v in volumes:
+    database_search.append(os.path.join('/Volumes', v))
   homedir = os.path.expanduser('~')
   music_path = os.path.join(homedir, 'Music')
   if os.path.exists(music_path):
