@@ -119,10 +119,11 @@ def SelectMusicPath(music_paths):
   print()
   logging.info('Top {} music locations shown (from Serato database)'.format(len(music_paths)))
   print()
-  print('Select music path to sync as subcrates')
+  print('Select music folder to sync as subcrates')
   print()
   for number, path in enumerate(music_paths):
     print('  {}. {}'.format(number + 1, path))
+  print('\n  {}. Select a new path'.format(len(music_paths) + 1))
   while True:
     menu = input('\nSelect an option: ')
     try:
@@ -137,6 +138,14 @@ def SelectMusicPath(music_paths):
       break
   if menu > 0 and menu <= len(music_paths):
     return(music_paths[menu - 1])
+  elif menu == len(music_paths) + 1:
+    import tkinter
+    from tkinter import filedialog
+    root = tkinter.Tk()
+    root.withdraw()
+    logging.info('Select a folder to sync using the file chooser')
+    time.sleep(3)
+    return filedialog.askdirectory()
 
 def StartApp():
   Header()
@@ -254,7 +263,7 @@ def ChangeMusicLocation(value):
   if os.path.exists(value):
     music = value
   else:
-    logging.error('New music path not found')
+    logging.error('New music folder not found')
     time.sleep(1)
   StartApp()
 
@@ -366,7 +375,7 @@ def CrateCheck(temp_database, music_folders):
 def BuildCrate(crate_path, music_folder):
   global updates
   crate_name = os.path.split(crate_path)[-1]
-  logging.info('\nBuilding new crate file {} from path {}'.format(crate_path, music_folder))
+  logging.info('\nBuilding new crate file {} from folder {}'.format(crate_path, music_folder))
   crate_data = b''
   crate_data += Encode([('vrsn', '1.0/Serato ScratchLive Crate')])
   crate_data += Encode([('osrt', [('tvcn', 'song'), ('brev', '')])])
@@ -467,7 +476,7 @@ def RestoreDatabase():
             try:
               BackupDatabase()
               subcrates_path = os.path.join(database, 'Subcrates')
-              logging.debug('Restore: Removing subcrates path {}'.format(subcrates_path))
+              logging.debug('Restore: Removing subcrates folder {}'.format(subcrates_path))
               shutil.rmtree(subcrates_path)
               logging.info('Restoring from backup: {}'.format(restore))
               shutil.copytree(restore, database, dirs_exist_ok=True)
@@ -510,6 +519,7 @@ def SyncCrates():
         print('Done')
         time.sleep(1)
       else:
+        print()
         logging.info('Not applying changes')
         time.sleep(2)
         StartApp()
