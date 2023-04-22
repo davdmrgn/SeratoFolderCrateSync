@@ -40,11 +40,21 @@ def SelectDatabase(serato_databases):
     # print('Serato database found: {}'.format(serato_databases[0]))
     # time.sleep(1.5)
     return(serato_databases[0])
+  elif len(serato_database) == 0:
+    print()
+    import tkinter
+    from tkinter import filedialog
+    root = tkinter.Tk()
+    root.withdraw()
+    logging.info('Select a folder to sync using the file chooser')
+    time.sleep(3)
+    return filedialog.askdirectory()
   elif len(serato_databases) > 1:
     print('{} Serato databases found'.format(len(serato_databases)))
     print()
     for number, path in enumerate(serato_databases):
       print('{}. {}'.format(number + 1, path))
+    print('\n  {}. Select a new path'.format(len(serato_databases) + 1))
     while True:
       menu = input('\nSelect an option: ')
       try:
@@ -59,6 +69,14 @@ def SelectDatabase(serato_databases):
         break
     if menu > 0 and menu <= len(serato_databases):
       return(serato_databases[menu - 1])
+    elif menu == len(music_paths) + 1:
+      import tkinter
+      from tkinter import filedialog
+      root = tkinter.Tk()
+      root.withdraw()
+      logging.info('Select a folder to sync using the file chooser')
+      time.sleep(3)
+      return filedialog.askdirectory()
   else:
     logging.error('Serato database not found')
     time.sleep(1)
@@ -257,14 +275,12 @@ def ChangeDatabase(value):
   StartApp()
 
 def ChangeMusicLocation(value):
-  global music
   logging.info('Current Music location:   {}'.format(value))
-  value = str(input('\nEnter new music location: '))
-  if os.path.exists(value):
-    music = value
-  else:
-    logging.error('New music folder not found')
-    time.sleep(1)
+  global music
+  new_music = FindMusic()
+  if new_music:
+    logging.debug('Changing music location to {}'.format(new_music))
+    music = new_music
   StartApp()
 
 def ToggleParentFolderAsCrate(value):
