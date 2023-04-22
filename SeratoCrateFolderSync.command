@@ -227,12 +227,11 @@ def MainMenu(folder_count, file_count):
   elif menu == 'h':
     Help()
   elif menu == 'q':
-    quit()
+    logging.debug('Session end')
   else:
     print('Invalid option')
     time.sleep(1)
     StartApp()
-  logging.debug('Session end')
 
 def ChangeDatabase(value):
   new_databases = SearchDatabase()
