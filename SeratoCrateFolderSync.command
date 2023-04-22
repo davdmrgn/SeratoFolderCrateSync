@@ -93,18 +93,22 @@ def FindMusic():
         try:
           #print('Adding: {}'.format(os.path.join(file_base, line[1][1][1])))
           files.append(os.path.join(file_base, line[1][1][1]))
+          print('Files: {}'.format(len(files)), end='\r')
         except:
           pass
+    print()
     if len(files) > 1:
+      files.sort()
       music_paths = []
-      music_paths.append(os.path.commonprefix(files))
+      dirnames = []
+      for file in files:
+        dirnames.append(os.path.dirname(file))
+      music_paths = sorted(set(dirnames), key=len)[:10]
       if len(music_paths) == 1:
         logging.debug('Music location found: {}'.format(os.path.normpath(music_paths[0])))
-        #time.sleep(1.5)
         return(os.path.normpath(music_paths[0]))
       elif len(music_paths) > 1:
-        logging.info('{} Music locations found'.format(len(music_paths)))
-        return(SelectMusicPath(os.path.normpath(music_paths[0])))
+        return(SelectMusicPath(music_paths))
         #time.sleep(1.5)
       else:
         logging.error('Music location(s) not found')
@@ -113,7 +117,9 @@ def FindMusic():
 ### Change music root to sync
 def SelectMusicPath(music_paths):
   print()
-  print('Select music path')
+  logging.info('Top {} music locations shown (from Serato database)'.format(len(music_paths)))
+  print()
+  print('Select music path to sync as subcrates')
   print()
   for number, path in enumerate(music_paths):
     print('  {}. {}'.format(number + 1, path))
@@ -152,7 +158,7 @@ def StartApp():
   else:
     logging.error('Log file:  ' + 'NOT FOUND')
   print()
-  logging.info('Include parent folder as crate:  {}'.format('ENABLED' if include_parent_crate == 'True' else 'DISABLED'))
+  logging.info('Include parent folder as crate:  {}'.format('YES' if include_parent_crate == 'True' else 'NO'))
   print()
   file_count = []
   folder_count = []
@@ -192,11 +198,21 @@ def MainMenu(folder_count, file_count):
   menu = str(input('\nSelect an option: ').lower())
   global rebuild
   if menu == 's':
-    rebuild = 'False'
-    SyncCrates()
+    if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
+      rebuild = 'False'
+      SyncCrates()
+    else:
+      logging.error('Not enough files/folders to justify sync')
+      time.sleep(2)
+      StartApp()
   elif menu == 'x':
-    rebuild = 'True'
-    SyncCrates()
+    if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
+      rebuild = 'True'
+      SyncCrates()
+    else:
+      logging.error('Not enough files/folders to justify sync')
+      time.sleep(2)
+      StartApp()
   elif menu == 'm':
     ChangeMusicLocation(music)
   elif menu == 'p':
@@ -496,6 +512,7 @@ def SyncCrates():
         time.sleep(1)
       else:
         logging.info('Not applying changes')
+        time.sleep(2)
         StartApp()
     else:
       logging.info('\nNo crate updates required')
