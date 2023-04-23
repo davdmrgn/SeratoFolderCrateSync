@@ -3,11 +3,11 @@
 ## [0.041](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.041) - 2023-04-22
 
 ### Added
-- Select folder to sync on start based on files in Serato database
 - Folder chooser dialog to add a new folder to sync
 
 ### Changed
 - Remove dependency on psutil to find libraries on all drives
+- Logic used to determine where music files are at start
 
 ## [0.04](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.04) - 2023-04-20
 
