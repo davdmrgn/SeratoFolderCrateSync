@@ -117,20 +117,44 @@ def FindMusic():
     print()
     if len(files) > 1:
       files.sort()
-      music_paths = []
+      ### Get all directories from all files
       dirnames = []
       for file in files:
         dirnames.append(os.path.dirname(file))
-      music_paths = sorted(set(dirnames), key=len)[:10]
-      if len(music_paths) == 1:
-        logging.debug('Music location found: {}'.format(os.path.normpath(music_paths[0])))
-        return(os.path.normpath(music_paths[0]))
-      elif len(music_paths) > 1:
-        return(SelectMusicPath(music_paths))
-        #time.sleep(1.5)
+
+      ### Top level directories, by length
+      top_dirs = sorted(set(dirnames), key=len)[:10]
+
+      ### Filter out directories with no subfolders
+      dir_counts = {}
+      for path in top_dirs:
+        for root, dirs, files in os.walk(path):
+          if len(dirs) > 1:
+            logging.debug('Found music directory {} with {} subdirectories'.format(root, len(dirs)))
+            dir_counts.update({root: len(dirs)})
+
+      ### Find directories with shortest length and sub directories
+      intersected_dirs = set(top_dirs).intersection(set(dir_counts))
+
+      ### Compile a list of instersected directories and add counts
+      found_paths = {}
+      for dirname in intersected_dirs:
+        logging.debug('Intersected directory: {}'.format(dirname))
+        found_paths.update({dirname: dir_counts[dirname]})
+
+      # Sort the counts
+      found_paths = dict(sorted(found_paths.items(), key=lambda item: item[1], reverse=True))
+
+      pathcheck = []
+      for found_path in found_paths:
+        pathcheck.append(found_path)
+
+      if pathcheck[0] == os.path.commonpath(pathcheck):
+        logging.debug('Music location found: {}'.format(pathcheck)[0])
+        return list(found_paths)[0]
       else:
-        logging.error('Music location(s) not found')
-        time.sleep(1)
+        return(SelectMusicPath(found_paths))
+        #time.sleep(1.5)
 
 ### Change music root to sync
 def SelectMusicPath(music_paths):
@@ -277,7 +301,37 @@ def ChangeDatabase(value):
 def ChangeMusicLocation(value):
   logging.info('Current Music location:   {}'.format(value))
   global music
-  new_music = FindMusic()
+  serato_database = os.path.join(database, 'database V2')
+  if os.path.exists(serato_database):
+    print('Reading Serato database for music location(s)')
+    with open(serato_database, 'rb') as db:
+      db_binary = db.read()
+    db = Decode(db_binary)
+    if re.match('/Volumes', serato_database):
+      file_base = serato_database.split('_Serato_')[0]
+    else:
+      file_base = '/'
+    global files
+    files = []
+    for line in db:
+      if line[0] == 'otrk':
+        try:
+          #print('Adding: {}'.format(os.path.join(file_base, line[1][1][1])))
+          files.append(os.path.join(file_base, line[1][1][1]))
+          print('Files: {}'.format(len(files)), end='\r')
+        except:
+          pass
+    print()
+    if len(files) > 1:
+      files.sort()
+      ### Get all directories from all files
+      dirnames = []
+      for file in files:
+        dirnames.append(os.path.dirname(file))
+
+  ### Top level directories, by length
+  top_dirs = sorted(set(dirnames), key=len)[:10]
+  new_music = SelectMusicPath(top_dirs)
   if new_music:
     logging.debug('Changing music location to {}'.format(new_music))
     music = new_music
