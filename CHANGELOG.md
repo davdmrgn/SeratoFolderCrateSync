@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.041](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.041) - 2023-04-22
+
+### Added
+- Folder chooser dialog to add a new folder to sync
+
+### Changed
+- Remove dependency on psutil to find libraries on all drives
+- Logic used to determine where music files are at start
+
 ## [0.04](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.04) - 2023-04-20
 
 ### Added

@@ -8,7 +8,6 @@ import time
 from datetime import datetime
 import logging
 import shutil
-import psutil
 
 def Header():
   print()
@@ -20,11 +19,10 @@ def Header():
 ### Search disks for Serato databases
 def SearchDatabase():
   # print('Searching for Serato database')
-  partitions = psutil.disk_partitions()
+  volumes = os.listdir('/Volumes')
   database_search = []
-  for p in partitions:
-    if not re.search('dontbrowse', p.opts):
-      database_search.append(p.mountpoint)
+  for v in volumes:
+    database_search.append(os.path.join('/Volumes', v))
   homedir = os.path.expanduser('~')
   music_path = os.path.join(homedir, 'Music')
   if os.path.exists(music_path):
@@ -42,11 +40,21 @@ def SelectDatabase(serato_databases):
     # print('Serato database found: {}'.format(serato_databases[0]))
     # time.sleep(1.5)
     return(serato_databases[0])
+  elif len(serato_database) == 0:
+    print()
+    import tkinter
+    from tkinter import filedialog
+    root = tkinter.Tk()
+    root.withdraw()
+    logging.info('Select a folder to sync using the file chooser')
+    time.sleep(3)
+    return filedialog.askdirectory()
   elif len(serato_databases) > 1:
     print('{} Serato databases found'.format(len(serato_databases)))
     print()
     for number, path in enumerate(serato_databases):
       print('{}. {}'.format(number + 1, path))
+    print('\n  {}. Select a new path'.format(len(serato_databases) + 1))
     while True:
       menu = input('\nSelect an option: ')
       try:
@@ -61,6 +69,14 @@ def SelectDatabase(serato_databases):
         break
     if menu > 0 and menu <= len(serato_databases):
       return(serato_databases[menu - 1])
+    elif menu == len(music_paths) + 1:
+      import tkinter
+      from tkinter import filedialog
+      root = tkinter.Tk()
+      root.withdraw()
+      logging.info('Select a folder to sync using the file chooser')
+      time.sleep(3)
+      return filedialog.askdirectory()
   else:
     logging.error('Serato database not found')
     time.sleep(1)
@@ -95,30 +111,61 @@ def FindMusic():
         try:
           #print('Adding: {}'.format(os.path.join(file_base, line[1][1][1])))
           files.append(os.path.join(file_base, line[1][1][1]))
+          print('Files: {}'.format(len(files)), end='\r')
         except:
           pass
+    print()
     if len(files) > 1:
-      music_paths = []
-      music_paths.append(os.path.commonprefix(files))
-      if len(music_paths) == 1:
-        logging.debug('Music location found: {}'.format(os.path.normpath(music_paths[0])))
-        #time.sleep(1.5)
-        return(os.path.normpath(music_paths[0]))
-      elif len(music_paths) > 1:
-        logging.info('{} Music locations found'.format(len(music_paths)))
-        return(SelectMusicPath(os.path.normpath(music_paths[0])))
-        #time.sleep(1.5)
+      files.sort()
+      ### Get all directories from all files
+      dirnames = []
+      for file in files:
+        dirnames.append(os.path.dirname(file))
+
+      ### Top level directories, by length
+      top_dirs = sorted(set(dirnames), key=len)[:10]
+
+      ### Filter out directories with no subfolders
+      dir_counts = {}
+      for path in top_dirs:
+        for root, dirs, files in os.walk(path):
+          if len(dirs) > 1:
+            logging.debug('Found music directory {} with {} subdirectories'.format(root, len(dirs)))
+            dir_counts.update({root: len(dirs)})
+
+      ### Find directories with shortest length and sub directories
+      intersected_dirs = set(top_dirs).intersection(set(dir_counts))
+
+      ### Compile a list of instersected directories and add counts
+      found_paths = {}
+      for dirname in intersected_dirs:
+        logging.debug('Intersected directory: {}'.format(dirname))
+        found_paths.update({dirname: dir_counts[dirname]})
+
+      # Sort the counts
+      found_paths = dict(sorted(found_paths.items(), key=lambda item: item[1], reverse=True))
+
+      pathcheck = []
+      for found_path in found_paths:
+        pathcheck.append(found_path)
+
+      if pathcheck[0] == os.path.commonpath(pathcheck):
+        logging.debug('Music location found: {}'.format(pathcheck)[0])
+        return list(found_paths)[0]
       else:
-        logging.error('Music location(s) not found')
-        time.sleep(1)
+        return(SelectMusicPath(found_paths))
+        #time.sleep(1.5)
 
 ### Change music root to sync
 def SelectMusicPath(music_paths):
   print()
-  print('Select music path')
+  logging.info('Top {} music locations shown (from Serato database)'.format(len(music_paths)))
+  print()
+  print('Select music folder to sync as subcrates')
   print()
   for number, path in enumerate(music_paths):
     print('  {}. {}'.format(number + 1, path))
+  print('\n  {}. Select a new path'.format(len(music_paths) + 1))
   while True:
     menu = input('\nSelect an option: ')
     try:
@@ -133,6 +180,14 @@ def SelectMusicPath(music_paths):
       break
   if menu > 0 and menu <= len(music_paths):
     return(music_paths[menu - 1])
+  elif menu == len(music_paths) + 1:
+    import tkinter
+    from tkinter import filedialog
+    root = tkinter.Tk()
+    root.withdraw()
+    logging.info('Select a folder to sync using the file chooser')
+    time.sleep(3)
+    return filedialog.askdirectory()
 
 def StartApp():
   Header()
@@ -154,7 +209,7 @@ def StartApp():
   else:
     logging.error('Log file:  ' + 'NOT FOUND')
   print()
-  logging.info('Include parent folder as crate:  {}'.format('ENABLED' if include_parent_crate == 'True' else 'DISABLED'))
+  logging.info('Include parent folder as crate:  {}'.format('YES' if include_parent_crate == 'True' else 'NO'))
   print()
   file_count = []
   folder_count = []
@@ -194,11 +249,21 @@ def MainMenu(folder_count, file_count):
   menu = str(input('\nSelect an option: ').lower())
   global rebuild
   if menu == 's':
-    rebuild = 'False'
-    SyncCrates()
+    if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
+      rebuild = 'False'
+      SyncCrates()
+    else:
+      logging.error('Not enough files/folders to justify sync')
+      time.sleep(2)
+      StartApp()
   elif menu == 'x':
-    rebuild = 'True'
-    SyncCrates()
+    if database and music and len(folder_count) > 1 and len(file_count) > len(folder_count):
+      rebuild = 'True'
+      SyncCrates()
+    else:
+      logging.error('Not enough files/folders to justify sync')
+      time.sleep(2)
+      StartApp()
   elif menu == 'm':
     ChangeMusicLocation(music)
   elif menu == 'p':
@@ -213,12 +278,11 @@ def MainMenu(folder_count, file_count):
   elif menu == 'h':
     Help()
   elif menu == 'q':
-    quit()
+    logging.debug('Session end')
   else:
     print('Invalid option')
     time.sleep(1)
     StartApp()
-  logging.debug('Session end')
 
 def ChangeDatabase(value):
   new_databases = SearchDatabase()
@@ -235,14 +299,42 @@ def ChangeDatabase(value):
   StartApp()
 
 def ChangeMusicLocation(value):
-  global music
   logging.info('Current Music location:   {}'.format(value))
-  value = str(input('\nEnter new music location: '))
-  if os.path.exists(value):
-    music = value
-  else:
-    logging.error('New music path not found')
-    time.sleep(1)
+  global music
+  serato_database = os.path.join(database, 'database V2')
+  if os.path.exists(serato_database):
+    print('Reading Serato database for music location(s)')
+    with open(serato_database, 'rb') as db:
+      db_binary = db.read()
+    db = Decode(db_binary)
+    if re.match('/Volumes', serato_database):
+      file_base = serato_database.split('_Serato_')[0]
+    else:
+      file_base = '/'
+    global files
+    files = []
+    for line in db:
+      if line[0] == 'otrk':
+        try:
+          #print('Adding: {}'.format(os.path.join(file_base, line[1][1][1])))
+          files.append(os.path.join(file_base, line[1][1][1]))
+          print('Files: {}'.format(len(files)), end='\r')
+        except:
+          pass
+    print()
+    if len(files) > 1:
+      files.sort()
+      ### Get all directories from all files
+      dirnames = []
+      for file in files:
+        dirnames.append(os.path.dirname(file))
+
+  ### Top level directories, by length
+  top_dirs = sorted(set(dirnames), key=len)[:10]
+  new_music = SelectMusicPath(top_dirs)
+  if new_music:
+    logging.debug('Changing music location to {}'.format(new_music))
+    music = new_music
   StartApp()
 
 def ToggleParentFolderAsCrate(value):
@@ -353,7 +445,7 @@ def CrateCheck(temp_database, music_folders):
 def BuildCrate(crate_path, music_folder):
   global updates
   crate_name = os.path.split(crate_path)[-1]
-  logging.info('\nBuilding new crate file {} from path {}'.format(crate_path, music_folder))
+  logging.info('\nBuilding new crate file {} from folder {}'.format(crate_path, music_folder))
   crate_data = b''
   crate_data += Encode([('vrsn', '1.0/Serato ScratchLive Crate')])
   crate_data += Encode([('osrt', [('tvcn', 'song'), ('brev', '')])])
@@ -454,7 +546,7 @@ def RestoreDatabase():
             try:
               BackupDatabase()
               subcrates_path = os.path.join(database, 'Subcrates')
-              logging.debug('Restore: Removing subcrates path {}'.format(subcrates_path))
+              logging.debug('Restore: Removing subcrates folder {}'.format(subcrates_path))
               shutil.rmtree(subcrates_path)
               logging.info('Restoring from backup: {}'.format(restore))
               shutil.copytree(restore, database, dirs_exist_ok=True)
@@ -497,7 +589,9 @@ def SyncCrates():
         print('Done')
         time.sleep(1)
       else:
+        print()
         logging.info('Not applying changes')
+        time.sleep(2)
         StartApp()
     else:
       logging.info('\nNo crate updates required')
