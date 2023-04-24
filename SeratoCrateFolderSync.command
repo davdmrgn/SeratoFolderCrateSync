@@ -104,22 +104,22 @@ def FindMusic():
       file_base = serato_database.split('_Serato_')[0]
     else:
       file_base = '/'
-    global files
-    files = []
+    global all_files
+    all_files = []
     for line in db:
       if line[0] == 'otrk':
         try:
           #print('Adding: {}'.format(os.path.join(file_base, line[1][1][1])))
-          files.append(os.path.join(file_base, line[1][1][1]))
-          print('Files: {}'.format(len(files)), end='\r')
+          all_files.append(os.path.join(file_base, line[1][1][1]))
+          print('Files: {}'.format(len(all_files)), end='\r')
         except:
           pass
-    print()
-    if len(files) > 1:
-      files.sort()
+    print('             ')
+    if len(all_files) > 1:
+      all_files.sort()
       ### Get all directories from all files
       dirnames = []
-      for file in files:
+      for file in all_files:
         dirnames.append(os.path.dirname(file))
 
       ### Top level directories, by length
@@ -311,22 +311,22 @@ def ChangeMusicLocation(value):
       file_base = serato_database.split('_Serato_')[0]
     else:
       file_base = '/'
-    global files
-    files = []
+    global all_files
+    all_files = []
     for line in db:
       if line[0] == 'otrk':
         try:
           #print('Adding: {}'.format(os.path.join(file_base, line[1][1][1])))
-          files.append(os.path.join(file_base, line[1][1][1]))
-          print('Files: {}'.format(len(files)), end='\r')
+          all_files.append(os.path.join(file_base, line[1][1][1]))
+          print('Files: {}'.format(len(all_files)), end='\r')
         except:
           pass
     print()
-    if len(files) > 1:
-      files.sort()
+    if len(all_files) > 1:
+      all_files.sort()
       ### Get all directories from all files
       dirnames = []
-      for file in files:
+      for file in all_files:
         dirnames.append(os.path.dirname(file))
 
   ### Top level directories, by length
@@ -424,6 +424,7 @@ def MusicFolderScan():
 ### Check for existing crate, add if needed
 def CrateCheck(temp_database, music_folders):
   for music_folder in music_folders:
+    logging.debug('Music folder: {}'.format(music_folder))
     if include_parent_crate == 'True':
       crate_name = music_folder.replace(music, os.path.basename(music)).replace('/', '%%') + '.crate'
     else:
@@ -445,7 +446,8 @@ def CrateCheck(temp_database, music_folders):
 def BuildCrate(crate_path, music_folder):
   global updates
   crate_name = os.path.split(crate_path)[-1]
-  logging.info('\nBuilding new crate file {} from folder {}'.format(crate_path, music_folder))
+  # logging.info('\nNew crate - music_folder: {} from folder {}'.format(music_folder))
+  # logging.info('\nNew crate - crate_path: {} from folder {}'.format(crate_path))
   crate_data = b''
   crate_data += Encode([('vrsn', '1.0/Serato ScratchLive Crate')])
   crate_data += Encode([('osrt', [('tvcn', 'song'), ('brev', '')])])
@@ -459,7 +461,7 @@ def BuildCrate(crate_path, music_folder):
       else:
         file_path = os.path.join(music_folder[1:], file)
         file_full_path = '/' + file_path
-      if file_full_path in files:
+      if file_full_path in all_files:
         logging.info('Adding existing file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
       else:
         logging.info('Adding new file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
@@ -474,7 +476,6 @@ def BuildCrate(crate_path, music_folder):
 def ExistingCrate(crate_path, music_folder):
   global updates
   crate_name = os.path.split(crate_path)[-1]
-  logging.debug('Checking existing crate - source: {}\tcrate file: {}'.format(music_folder, crate_path))
   with open(crate_path, 'rb') as f:
     crate_data = f.read()
   for file in sorted(os.listdir(music_folder)):
@@ -484,14 +485,15 @@ def ExistingCrate(crate_path, music_folder):
         file_path = os.path.join(music_folder.replace(music_root, '')[1:], file)
         file_full_path = os.path.join(music_root, file_path)
       else:
-        file_path = os.path.join(music_folder[1:], file)
+        file_path = os.path.join(music_folder, file)[1:]
         file_full_path = '/' + file_path
       file_binary = Encode([('otrk', [('ptrk', file_path)])])
       if crate_data.find(file_binary) != -1:
         #logging.debug('{} exists in crate {}'.format(file, crate_name))
         pass
       else:
-        if file_full_path in files:
+        print('Files: {}'.format(len(all_files)), end='\r')
+        if file_full_path in all_files:
           logging.info('Adding existing file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
         else:
           logging.info('Adding new file {} to {}'.format(file, crate_name.replace('%%', u' \u2771 ')))
@@ -580,7 +582,7 @@ def SyncCrates():
     CrateCheck(temp_database, music_folders)
     if updates > 0:
       print()
-      logging.info('{} updates'.format(updates))
+      logging.info('{} update(s)'.format(updates))
       #time.sleep(1)
       menu = str(input('\nEnter [y]es to apply changes: ').lower())
       if re.match('y|yes', menu.lower()):
@@ -596,8 +598,9 @@ def SyncCrates():
     else:
       logging.info('\nNo crate updates required')
       time.sleep(1)
-    logging.debug('Removing temporary database at {}'.format(temp_database))
-    shutil.rmtree(temp_database)
+    if os.path.exists(temp_database):
+      logging.debug('Removing temporary database at {}'.format(temp_database))
+      shutil.rmtree(temp_database)
   except:
     logging.exception('We ran into a problem at sync_crates')
 

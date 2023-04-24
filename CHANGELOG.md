@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.042](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.042) - 2023-04-24
+
+### Fixed
+- Temp database remove error on sync
+- Properly logging when a moved file already exists in database
+
+### Changed
+- Debug logging now shows music folder and crate file path
+
 ## [0.041](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.041) - 2023-04-22
 
 ### Added
