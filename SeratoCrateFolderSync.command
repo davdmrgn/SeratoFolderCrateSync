@@ -114,7 +114,7 @@ def FindMusic():
           print('Files: {}'.format(len(files)), end='\r')
         except:
           pass
-    print()
+    print('             ')
     if len(files) > 1:
       files.sort()
       ### Get all directories from all files
@@ -580,7 +580,7 @@ def SyncCrates():
     CrateCheck(temp_database, music_folders)
     if updates > 0:
       print()
-      logging.info('{} updates'.format(updates))
+      logging.info('{} update(s)'.format(updates))
       #time.sleep(1)
       menu = str(input('\nEnter [y]es to apply changes: ').lower())
       if re.match('y|yes', menu.lower()):
@@ -596,8 +596,9 @@ def SyncCrates():
     else:
       logging.info('\nNo crate updates required')
       time.sleep(1)
-    logging.debug('Removing temporary database at {}'.format(temp_database))
-    shutil.rmtree(temp_database)
+    if os.path.exists(temp_database):
+      logging.debug('Removing temporary database at {}'.format(temp_database))
+      shutil.rmtree(temp_database)
   except:
     logging.exception('We ran into a problem at sync_crates')
 
