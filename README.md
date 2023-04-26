@@ -14,8 +14,19 @@ Syncrhonize music folders to Serato crates
 
 ## Usage
 
-- Right-click [SeratoCrateFolderSync.command](SeratoCrateFolderSync.command) > Open
-  - Accept any security warnings
+
+- Open Terminal
+- Make file executable
+  ```
+  chmod +x ./SeratoCrateFolderSync.command
+  ```
+- Run the app
+  - Right-click [SeratoCrateFolderSync.command](SeratoCrateFolderSync.command) > Open
+    - Accept any security warnings
+  - or, in Terminal
+    ```
+    ./SeratoCrateFolderSync.command
+    ```
 
 ## How does it work?
 
@@ -31,7 +42,8 @@ Syncrhonize music folders to Serato crates
 - This script only updates files in `/Subcrates` directory; does not modify:
   - `database V2` file
   - Smart crates
-- Script preferences are saved to a log file in `_Serato_/Logs`
+- Script preferences are saved to a `ini` file in `_Serato_/Logs`
+- Script saves logs in `_Serato_/Logs`
 
 ## Limitations
 
