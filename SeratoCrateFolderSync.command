@@ -144,6 +144,7 @@ def FindMusic():
 
       # Sort the counts
       found_paths = dict(sorted(found_paths.items(), key=lambda item: item[1], reverse=True))
+      logging.debug('Found paths: {}'.format(found_paths))
 
       pathcheck = []
       for found_path in found_paths:
