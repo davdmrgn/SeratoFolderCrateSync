@@ -179,7 +179,7 @@ def SelectMusicPath(music_paths):
     else:
       break
   if menu > 0 and menu <= len(music_paths):
-    return(music_paths[menu - 1])
+    return(list(music_paths)[menu - 1])
   elif menu == len(music_paths) + 1:
     import tkinter
     from tkinter import filedialog
