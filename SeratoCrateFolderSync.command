@@ -151,7 +151,7 @@ def FindMusic():
         pathcheck.append(found_path)
 
       if pathcheck[0] == os.path.commonpath(pathcheck):
-        logging.debug('Music location found: {}'.format(pathcheck)[0])
+        logging.debug('Music location found: {}'.format(pathcheck[0]))
         return list(found_paths)[0]
       else:
         return(SelectMusicPath(found_paths))
