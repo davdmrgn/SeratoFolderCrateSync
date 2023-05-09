@@ -144,13 +144,14 @@ def FindMusic():
 
       # Sort the counts
       found_paths = dict(sorted(found_paths.items(), key=lambda item: item[1], reverse=True))
+      logging.debug('Found paths: {}'.format(found_paths))
 
       pathcheck = []
       for found_path in found_paths:
         pathcheck.append(found_path)
 
       if pathcheck[0] == os.path.commonpath(pathcheck):
-        logging.debug('Music location found: {}'.format(pathcheck)[0])
+        logging.debug('Music location found: {}'.format(pathcheck[0]))
         return list(found_paths)[0]
       else:
         return(SelectMusicPath(found_paths))
@@ -179,7 +180,7 @@ def SelectMusicPath(music_paths):
     else:
       break
   if menu > 0 and menu <= len(music_paths):
-    return(music_paths[menu - 1])
+    return(list(music_paths)[menu - 1])
   elif menu == len(music_paths) + 1:
     import tkinter
     from tkinter import filedialog

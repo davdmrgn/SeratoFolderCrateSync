@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.043](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.043) - 2023-05-08
+
+### Fixed
+- Music path selector
+
 ## [0.042](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.042) - 2023-04-24
 
 ### Fixed
