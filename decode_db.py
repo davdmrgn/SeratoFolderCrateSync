@@ -10,36 +10,21 @@ import shutil
 serato_database = '/Users/dave/Documents/database V2'
 
 with open(serato_database, 'rb') as db:
-  db_binary = db.read()
-
-data = db_binary
+  data = db.read()
 
 def decode(input):
-  output = []
   i = 0
-  while i < len(input):
-    key = input[i:i+4].decode('utf-8')
-    if re.match('vrsn|ttyp|pfil|tsng|tart|talb|tgen|tlen|tsiz|tbit|tbpm|tcom|ttyr|tad|tkey', key):
-      length = struct.unpack('>I', input[i+4:i+8])[0]
-      binary = input[i+8:i+8 + length]
-      binary_data = binary.decode('utf-16-be')
-      print((key, binary_data))
-    elif re.match('otrk', key):
-      length = struct.unpack('>I', input[i+4:i+8])[0]
-      binary = input[i+8:i+8 + length]
-      binary_data = decode(binary)
-      print(key, (binary_data))
-    else:
-      length = struct.unpack('>I', input[i+4:i+8])[0]
-    # elif key == '':
-    #   binary_data = binary
-    # else:
-    #   length = struct.unpack('>I', input[i+4:i+8])[0]
-    #   binary = input[i+8:i+8 + length]
-    #   if re.match('bhrt|uadd|ulbl|utme\sbav|bmis|bply|blop|bitu|bovc|bcrt|biro|bwlb|bwll|buns|bbgl|bkrk|bstm', key):
-    #     binary_data = binary
-    #   # else:
-    #   #   binary_data = binary.decode('utf-16-be')
-    i += 8 + length
+  while i < 2000:
+    a = i
+    b = i + 4
+    key_binary = input[a:b]
+    key = key_binary.decode('utf-8')
+    c = b + 4
+    length_binary = input[b:c]
+    length = c + struct.unpack('>I', length_binary)[0]
+    value_binary = input[c:length]
+    value = value_binary.decode('utf-16-be')
+    print(key, length, value)
+    i += length
 
 decode(data)
