@@ -15,18 +15,22 @@ with open(serato_database, 'rb') as db:
 data = db_binary
 
 def decode(input):
+  output = []
   i = 0
-  while i < 1000:# len(input):
+  while i < len(input):
     key = input[i:i+4].decode('utf-8')
     if re.match('vrsn|ttyp|pfil|tsng|tart|talb|tgen|tlen|tsiz|tbit|tbpm|tcom|ttyr|tad|tkey', key):
       length = struct.unpack('>I', input[i+4:i+8])[0]
       binary = input[i+8:i+8 + length]
       binary_data = binary.decode('utf-16-be')
-      print(key, binary_data)
+      print((key, binary_data))
     elif re.match('otrk', key):
       length = struct.unpack('>I', input[i+4:i+8])[0]
       binary = input[i+8:i+8 + length]
       binary_data = decode(binary)
+      print(key, (binary_data))
+    else:
+      length = struct.unpack('>I', input[i+4:i+8])[0]
     # elif key == '':
     #   binary_data = binary
     # else:
@@ -37,6 +41,5 @@ def decode(input):
     #   # else:
     #   #   binary_data = binary.decode('utf-16-be')
     i += 8 + length
-  return(key, binary_data)
 
 decode(data)
