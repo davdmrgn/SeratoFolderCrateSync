@@ -23,7 +23,10 @@ def decode(input):
     length_binary = input[b:c]
     length = c + struct.unpack('>I', length_binary)[0]
     value_binary = input[c:length]
-    value = value_binary.decode('utf-16-be')
+    if key == 'otrk':
+      value = decode(value_binary)
+    else:
+      value = value_binary.decode('utf-16-be')
     print(key, length, value)
     i += length
 
