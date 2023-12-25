@@ -14,20 +14,21 @@ with open(serato_database, 'rb') as db:
 
 def decode(input):
   i = 0
-  while i < 2000:
-    a = i
-    b = i + 4
-    key_binary = input[a:b]
+  while i < len(input):
+    j = i + 4
+    key_binary = input[i:j]
     key = key_binary.decode('utf-8')
-    c = b + 4
-    length_binary = input[b:c]
-    length = c + struct.unpack('>I', length_binary)[0]
-    value_binary = input[c:length]
+    k = j + 4
+    length_binary = input[j:k]
+    length = struct.unpack('>I', length_binary)[0]
+    value_binary = input[k:k + length]
     if key == 'otrk':
       value = decode(value_binary)
-    else:
+    elif re.match('(?!^u|^s|^b)' , key):
       value = value_binary.decode('utf-16-be')
+    else:
+      value = value_binary
     print(key, length, value)
-    i += length
+    i += 8 + length
 
 decode(data)
