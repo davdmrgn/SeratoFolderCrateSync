@@ -38,35 +38,38 @@ def decode(input):
 
 decoded_db = decode(data)
 
-print(decoded_db)
-
-
+# print(decoded_db)
 
 def encode(input):
   output = b''
   for line in input:
     key = line[0] #'vrsn'
     key_binary = key.encode('utf-8')
-    value = line[1]
-    value_binary = value.encode('utf-16-be')
-    length_binary = struct.pack('>I', len(value_binary))
-    output += (key_binary + length_binary + value_binary)
+    if key == 'vrsn':
+      value = line[1]
+      value_binary = value.encode('utf-16-be')
+      length_binary = struct.pack('>I', len(value_binary))
+      output += (key_binary + length_binary + value_binary)
+    elif key == 'otrk':
+      otrk_values = line[1]
+      otrk_output = b''
+      for line in otrk_values:
+        otrk_key = line[0]
+        otrk_key_binary = otrk_key.encode('utf-8')
+        otrk_value = line[1]
+        if isinstance(otrk_value, bytes):
+          otrk_value_binary = otrk_value
+        else:
+          otrk_value_binary = otrk_value.encode('utf-16-be')
+        length_binary = struct.pack('>I', len(otrk_value_binary))
+        otrk_output += (otrk_key_binary + length_binary + otrk_value_binary)
+      otrk_length_binary = struct.pack('>I', len(otrk_output))
+      output += (key_binary + otrk_length_binary + otrk_output)
+  return(output)
 
-key = line[0] #'otrk'
-key_binary = key.encode('utf-8')
+encoded_db = encode(decoded_db)
 
-otrk_values = line[1]
-otrk_output = b''
-for line in otrk_values:
-  otrk_key = line[0]
-  otrk_key_binary = otrk_key.encode('utf-8')
-  otrk_value = line[1]
-  if isinstance(otrk_value, bytes):
-    otrk_value_binary = otrk_value
-  else:
-    otrk_value_binary = otrk_value.encode('utf-16-be')
-  length_binary = struct.pack('>I', len(otrk_value_binary))
-  otrk_output += (otrk_key_binary + length_binary + otrk_value_binary)
+new_serato_database = '/Users/dave/Documents/database V2 new'
 
-otrk_length_binary = struct.pack('>I', len(otrk_output))
-output += (key_binary + otrk_length_binary + otrk_output)
+with open(new_serato_database, 'w+b') as new_db:
+  new_db.write(encoded_db)
