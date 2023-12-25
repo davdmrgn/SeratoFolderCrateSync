@@ -13,6 +13,7 @@ with open(serato_database, 'rb') as db:
   data = db.read()
 
 def decode(input):
+  output = []
   i = 0
   while i < len(input):
     j = i + 4
@@ -24,11 +25,15 @@ def decode(input):
     value_binary = input[k:k + length]
     if key == 'otrk':
       value = decode(value_binary)
+      # print(key, value)
     elif re.match('(?!^u|^s|^b)' , key):
       value = value_binary.decode('utf-16-be')
+      # if key == 'vrsn':
+      #   print(key, value)
     else:
       value = value_binary
-    print(key, length, value)
+    output.append((key, value))
     i += 8 + length
+  return(output)
 
-decode(data)
+decoded_db = decode(data)
