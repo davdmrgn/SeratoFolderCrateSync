@@ -42,32 +42,6 @@ print(decoded_db)
 
 
 
-
-
-## Take Encode function from orginal script
-def Encode(data):
-  result = b''
-  i = 0
-  for line in data:
-    try:
-      key = line[0].encode('utf-8')
-      if isinstance(line[1], list):
-        sub_list = line[1][0]
-        sub_key = sub_list[0].encode('utf-8')
-        sub_value = sub_list[1].encode('utf-16-be')
-        sub_length = struct.pack('>I', len(sub_value))
-        value = (sub_key + sub_length + sub_value)
-      else:
-        value = line[1].encode('utf-16-be')
-      length = struct.pack('>I', len(value))
-      result += (key + length + value)
-      i += 1
-    except:
-      logging.error('ENCODE ERROR: i: {}, key: {}, length: {}, value: {}'.format(i, key, length, value))
-      break
-  return(result)
-
-
 def encode(input):
   output = b''
   for line in input:
@@ -77,3 +51,22 @@ def encode(input):
     value_binary = value.encode('utf-16-be')
     length_binary = struct.pack('>I', len(value_binary))
     output += (key_binary + length_binary + value_binary)
+
+key = line[0] #'otrk'
+key_binary = key.encode('utf-8')
+
+otrk_values = line[1]
+otrk_output = b''
+for line in otrk_values:
+  otrk_key = line[0]
+  otrk_key_binary = otrk_key.encode('utf-8')
+  otrk_value = line[1]
+  if isinstance(otrk_value, bytes):
+    otrk_value_binary = otrk_value
+  else:
+    otrk_value_binary = otrk_value.encode('utf-16-be')
+  length_binary = struct.pack('>I', len(otrk_value_binary))
+  otrk_output += (otrk_key_binary + length_binary + otrk_value_binary)
+
+otrk_length_binary = struct.pack('>I', len(otrk_output))
+output += (key_binary + otrk_length_binary + otrk_output)
