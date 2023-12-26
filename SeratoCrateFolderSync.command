@@ -40,7 +40,7 @@ def SelectDatabase(serato_databases):
     # print('Serato database found: {}'.format(serato_databases[0]))
     # time.sleep(1.5)
     return(serato_databases[0])
-  elif len(serato_database) == 0:
+  elif len(serato_databases) == 0:
     print()
     import tkinter
     from tkinter import filedialog
@@ -405,7 +405,7 @@ def MakeTempDatabase():
     if os.path.exists(tempdir):
       logging.warning('Removing existing temporary database at {}'.format(tempdir))
       shutil.rmtree(tempdir)
-    shutil.copytree(database, tempdir, ignore=copy_ignore)
+    shutil.copytree(database, tempdir, ignore=copy_ignore, symlinks=True)
     return(tempdir)
   except:
     logging.exception('We ran into a problem at make_temp_database')
@@ -510,7 +510,7 @@ def BackupDatabase():
     print()
     logging.info('Backing up database at {} to {}'.format(database, backup_folder))
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
-    shutil.copytree(database, backup_folder, ignore=copy_ignore)
+    shutil.copytree(database, backup_folder, ignore=copy_ignore, symlinks=True)
   except:
     logging.exception('Error backing up database')
 
@@ -552,7 +552,7 @@ def RestoreDatabase():
               logging.debug('Restore: Removing subcrates folder {}'.format(subcrates_path))
               shutil.rmtree(subcrates_path)
               logging.info('Restoring from backup: {}'.format(restore))
-              shutil.copytree(restore, database, dirs_exist_ok=True)
+              shutil.copytree(restore, database, dirs_exist_ok=True, symlinks=True)
               logging.info('Restore complete')
             except:
               logging.error('Error in RestoreDatabase')
