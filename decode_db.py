@@ -1,22 +1,148 @@
-import configparser
+#!/usr/bin/env python3
+
 import os
-import io
-import re
-import struct
+import logging
 import time
 from datetime import datetime
-import logging
+import struct
+import re
+import configparser
+import sys
 import shutil
+import io
 
-homedir = os.path.expanduser('~')
-music_path = os.path.join(homedir, 'Music')
-database_path = os.path.join(music_path, '_Serato_')
-serato_database = os.path.join(database_path, 'database V2')
+def main():
+  print('\n')
+  print('╔══════════════════════════════════════════════════════════════════╗')
+  print('║                     Serato Crate Folder Sync                     ║')
+  print('╚══════════════════════════════════════════════════════════════════╝')
 
-with open(serato_database, 'rb') as db:
-  data = db.read()
+  database_location = FindDatabase()
+  config_location = ConfigFile(database_location)
+  config = configparser.ConfigParser()
+  config.read(config_location)
+  include_parent_crate = config['crates']['include_parent_crate']
+  database_decoded = ReadDatabase(database_location)
+  database_music = DatabaseMusic(database_location, database_decoded)
+  music_folder = MusicFolder(database_music)
+  ShowInfo(database_location, config_location, logfile, database_music)
+  music_folder_objects = MusicFolderObjects(music_folder, config_location)
+  menu = ShowMenu(include_parent_crate, database_location, music_folder, music_folder_objects)
+  if menu == 'a':
+    menu = AdvancedMenu()
+    if menu == 'b':
+      BackupDatabase(database_location)
+      main()
+    elif menu == 'u':
+      ReplacePath(database_location)
+      main()
+  elif menu == 'h':
+    Help()
+    main()
+  elif menu == 'q':
+    logging.debug('Session end')
+    sys.exit(1)
+  else:
+    print('Invalid option')
+    time.sleep(1)
+    ShowMenu(include_parent_crate, database_location, music_folder, music_folder_objects)
 
-def decode(input):
+def ShowMenu(include_parent_crate, database_location, music_folder, music_folder_objects):
+  print('\nA. Advanced Options')
+  print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
+  if database_location and music_folder and len(music_folder_objects[1]) > 1 and len(music_folder_objects[0]) > len(music_folder_objects[1]):
+    print('X. Rebuild subcrates from scratch')
+    print()
+    print('\033[1m' + 'S. Synchronize music folders to Serato crates' + '\033[0m')
+    print()
+  print('H. Help')
+  print()
+  print('Q. Quit')
+  menu = str(input('\nSelect an option: ').lower())
+  return menu
+
+def AdvancedMenu():
+  print()
+  print('B. Backup Database')
+  print('U. Update music folder path in database')
+  menu = str(input('\nSelect an option: ').lower())
+  return menu
+
+def FindDatabase():
+  homedir = os.path.expanduser('~')
+  music_path = os.path.join(homedir, 'Music')
+  volumes = os.listdir('/Volumes')
+  database_search = []
+  for volume in volumes:
+    database_search.append(os.path.join('/Volumes', volume))
+  if os.path.exists(music_path):
+    database_search.append(music_path)
+  serato_databases = []
+  for database in database_search:
+    database_path = os.path.join(database, '_Serato_')
+    if os.path.exists(database_path):
+      serato_databases.append(database_path)
+  if len(serato_databases) == 1:
+    return serato_databases[0]
+  else:
+    return SelectDatabase(serato_databases)
+
+def SelectDatabase(serato_databases):
+  if len(serato_databases) == 0:
+    import tkinter
+    from tkinter import filedialog
+    root = tkinter.Tk()
+    root.withdraw()
+    print('Select a Serato database folder using the file chooser')
+    time.sleep(3)
+    return filedialog.askdirectory()
+  else:
+    print('{} Serato databases found\n'.format(len(serato_databases)))
+    for number, path in enumerate(serato_databases):
+      print(' {}. {}'.format(number + 1, path))
+    print('\n {}. Select a new path'.format(len(serato_databases) + 1))
+    while True:
+      menu = input('\nSelect an option: ')
+      try:
+        if menu == '':
+          menu = 0
+        else:
+          menu = int(menu)
+      except ValueError:
+        print('Invalid option')
+        time.sleep(1)
+      else:
+        break
+    if menu > 0 and menu <= len(serato_databases):
+      return(serato_databases[menu - 1])
+
+### Logging
+def StartLogging(database_location):
+  now = datetime.now()
+  global logfile
+  logfile = '{}/Logs/SeratoCrateFolderSync-{}{}{}.log'.format(database_location, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day))
+  logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', force=True)
+  console = logging.StreamHandler()
+  console.setLevel(logging.INFO)
+  logging.getLogger('').addHandler(console)
+  logging.debug('Session start')
+
+def ConfigFile(database_location):
+  config = configparser.ConfigParser()
+  config_location = os.path.join(database_location, 'Logs', 'SeratoCrateFolderSync.ini')
+  if os.path.exists(config_location):
+    config.read(config_location)
+  else:
+    config.add_section('crates')
+    config.add_section('paths')
+    include_parent_crate = 'True'
+    config.set('crates', 'include_parent_crate', include_parent_crate)
+    os.makedirs(os.path.dirname(config_location), exist_ok=True)
+    with open(config_location, 'w') as config_file:
+      config.write(config_file)
+  return config_location
+
+def DecodeBinary(input):
   output = []
   i = 0
   l = 0
@@ -29,9 +155,10 @@ def decode(input):
     length = struct.unpack('>I', length_binary)[0]
     value_binary = input[k:k + length]
     if key == 'otrk':
-      value = decode(value_binary)
+      value = DecodeBinary(value_binary)
       l = l + 1
-      print('Decoding {}: {}'.format(l, value[1][1]))
+      terminal_width = os.get_terminal_size().columns - 20
+      print('Decoding {}: {}'.format(l, value[1][1][:terminal_width]), end='\033[K\r')
     elif re.match('(?!^u|^s|^b)' , key):
       value = value_binary.decode('utf-16-be')
     else:
@@ -40,37 +167,11 @@ def decode(input):
     i += 8 + length
   return(output)
 
-decoded_db = decode(data)
-
-def replace_path(input):
-  output = []
+def Encode(input):
   l = 0
-  for item in input:
-    key = item[0]
-    if key == 'otrk':
-      otrk_data = []
-      otrk_item = item[1]
-      for item in otrk_item:
-        if item[0] == 'pfil':
-          pfil_value = re.sub('/Google Drive/My Drive/', '/Music/', item[1])
-          l = l + 1
-          print('Replacing {}: {}'.format(l, pfil_value))
-          otrk_data.append((item[0], pfil_value))
-        else:
-          otrk_data.append(item)
-      output.append((key, otrk_data))
-    else:
-      output.append(item)
-  return output
-
-replaced_db = replace_path(decoded_db)
-
-def encode(input):
-  l = 0
-  # output = b''
   output = io.BytesIO()
   for line in input:
-    key = line[0] #'vrsn'
+    key = line[0]
     key_binary = key.encode('utf-8')
     if key == 'vrsn':
       value = line[1]
@@ -91,16 +192,252 @@ def encode(input):
         otrk_length_binary = struct.pack('>I', len(otrk_value_binary))
         value_binary += (otrk_key_binary + otrk_length_binary + otrk_value_binary)
     length_binary = struct.pack('>I', len(value_binary))
-    # output += (key_binary + length_binary + value_binary)
     output.write(key_binary + length_binary + value_binary)
   print('Encoded {} files'.format(l))
   return output.getvalue()
-  # return output_buffer.getvalue()
 
-encoded_db = encode(replaced_db)
+def ReadDatabase(database_location):
+  database_file = os.path.join(database_location, 'database V2')
+  if os.path.exists(database_file):
+    StartLogging(database_location)
+    logging.info('\nReading Serato database: {}'.format(database_file))
+    with open(database_file, 'rb') as db:
+      database_binary = db.read()
+    database_decoded = DecodeBinary(database_binary)
+    return database_decoded
+  else:
+    print('\nSerato database not found!')
+    sys.exit(1)
 
-new_serato_database = serato_database + ' new'
+def DatabaseMusic(database_location, database_decoded):
+  database_music = []
+  database_music_missing = []
+  logging.info('\n{}Extracting song file locations from database'.format('\033[1F\033[K'))
+  if re.match('/Volumes', database_location):
+    file_base = database_location.split('_Serato_')[0]
+  else:
+    file_base = '/'
+  for line in database_decoded:
+    if line[0] == 'otrk':
+      file_path = os.path.join(file_base, line[1][1][1])
+      if os.path.exists(file_path):
+        terminal_width = os.get_terminal_size().columns - 20
+        print('Adding {}: {}'.format(len(database_music) + 1, file_path[:terminal_width]), end='\033[K\r')
+        database_music.append(file_path)
+      else:
+        logging.warning('{}MISSING!{} {}'.format('\r\033[K\033[1;33m', '\033[0m', file_path))
+        database_music.append(file_path)
+        database_music_missing.append(file_path)
+  database_music.sort()
+  return database_music, database_music_missing
 
-print('Writing new database: ' + new_serato_database)
-with open(new_serato_database, 'w+b') as new_db:
-  new_db.write(encoded_db)
+def MusicFolder(database_music):
+  ### Get all folders from all files
+  folder_names = []
+  for file in database_music[0]:
+    folder_names.append(os.path.dirname(file))
+
+  ### Top level directories, by length
+  top_folders = sorted(set(folder_names), key=len)[:10]
+
+  ### Filter out directories with no subfolders
+  folder_counts = {}
+  for path in top_folders:
+    for root, dirs, files in os.walk(path):
+      if len(dirs) > 1:
+        logging.debug('Found music directory {} with {} subdirectories'.format(root, len(dirs)))
+        folder_counts.update({root: len(dirs)})
+
+  ### Find directories with shortest length and sub directories
+  intersected_dirs = set(top_folders).intersection(set(folder_counts))
+
+  ### Compile a list of instersected directories and add counts
+  found_folders = {}
+  for folder_name in intersected_dirs:
+    logging.debug('Intersected directory: {}'.format(folder_name))
+    found_folders.update({folder_name: folder_counts[folder_name]})
+
+  ### Sort the counts
+  found_folders = dict(sorted(found_folders.items(), key=lambda item: item[1], reverse=True))
+  logging.debug('Found paths: {}'.format(found_folders))
+
+  folder_check = []
+  for found_folder in found_folders:
+    folder_check.append(found_folder)
+
+  if folder_check[0] == os.path.commonpath(folder_check):
+    logging.debug('Music location found: {}'.format(folder_check[0]))
+    return list(found_folders)[0]
+  else:
+    SelectMusicFolder(found_folders)
+
+### Change music root to sync
+def SelectMusicFolder(found_folders):
+  logging.info('\nTop {} music locations shown (from Serato database)'.format(len(found_folders)))
+  print('\nSelect music folder to sync as subcrates\n')
+  for number, path in enumerate(found_folders):
+    print(' {}. {}'.format(number + 1, path))
+  print('\n {}. Select a new path'.format(len(found_folders) + 1))
+  while True:
+    menu = input('\nSelect an option: ')
+    try:
+      if menu == '':
+        menu = 0
+      else:
+        menu = int(menu)
+    except ValueError:
+      logging.error('Invalid option')
+      time.sleep(1)
+    else:
+      break
+  if menu > 0 and menu <= len(found_folders):
+    return(list(found_folders)[menu - 1])
+  elif menu == len(found_folders) + 1:
+    import tkinter
+    from tkinter import filedialog
+    root = tkinter.Tk()
+    root.withdraw()
+    logging.info('Select a folder to sync using the file chooser')
+    time.sleep(3)
+    return filedialog.askdirectory()
+
+def ShowInfo(database_location, config_location, logfile, database_music):
+  logging.info('\n{}\nSerato Database: {}'.format('\033[1F\033[K', database_location))
+  logging.info('Configuration File: {}'.format(config_location))
+  logging.info('Log File: {}'.format(logfile))
+  config = configparser.ConfigParser()
+  config.read(config_location)
+  include_parent_crate = config['crates']['include_parent_crate']
+  logging.info('\nDatabase Files: {}'.format(len(database_music[0])) if database_music[1] == 0 else 'Database Files: {} ({} Missing)'.format(len(database_music[0]), len(database_music[1])))
+  logging.info('\nInclude Parent Folder as Crate:  {}'.format('YES' if include_parent_crate == 'True' else 'NO'))
+
+def MusicFolderObjects(music_folder, config_location):
+  logging.info('\nMusic Folder: {}'.format(music_folder))
+  music_folder_files = []
+  music_folder_folders = []
+  config = configparser.ConfigParser()
+  config.read(config_location)
+  include_parent_crate = config['crates']['include_parent_crate']
+  for root, dirs, files in os.walk(music_folder):
+    if include_parent_crate == 'True':
+      music_folder_folders.append(root)
+    else:
+      for dir in dirs:
+        music_folder_folders.append(dir)
+    for file in files:
+      if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
+        music_folder_files.append(file)
+  logging.info('Music Folder Folders: {}   '.format(len(music_folder_folders)))
+  logging.info('Music Folder Files: {}'.format(len(music_folder_files)))
+  return music_folder_files, music_folder_folders
+
+### Backup existing database
+def BackupDatabase(database_location):
+  try:
+    now = datetime.now()
+    backup_folder = database_location + 'Backups/' + '_Serato_{}{}{}-{}{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute), '{:02d}'.format(now.second))
+    print()
+    logging.info('Backing up database at {} to {}'.format(database_location, backup_folder))
+    copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
+    shutil.copytree(database_location, backup_folder, ignore=copy_ignore, symlinks=True)
+    print('\nDone!')
+  except:
+    logging.exception('Error backing up database')
+
+def MakeTempDatabase(database_location):
+  try:
+    tempdir = os.path.join(database_location + 'Temp')
+    logging.debug('Create temporary database at {}'.format(tempdir))
+    copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
+    if os.path.exists(tempdir):
+      logging.warning('Removing existing temporary database at {}'.format(tempdir))
+      shutil.rmtree(tempdir)
+    shutil.copytree(database_location, tempdir, ignore=copy_ignore, symlinks=True)
+    return(tempdir)
+  except:
+    logging.exception('We ran into a problem at make_temp_database')
+
+def ReplacePathFind(music_folder):
+  print('\nMusic folder is: {}'.format(music_folder))
+  a = str(input('\n Enter the portion of the path to replace: '))
+  if len(a) > 1 and re.search(a, music_folder):
+    return a
+  elif len(a) == 0:
+    print('Nope')
+    return ''
+  else:
+    print('Invalid input')
+    time.sleep(1)
+    ReplacePathFind(music_folder)
+
+def ReplacePath(database_location):
+  temp_database = MakeTempDatabase(database_location)
+  database_decoded = ReadDatabase(temp_database)
+  database_music = DatabaseMusic(temp_database, database_decoded)
+  music_folder = MusicFolder(database_music)
+  find = ReplacePathFind(music_folder)
+  if len(find) == 0:
+    main()
+  else:
+    replace = str(input(' Enter the new replacement path: '))
+    output = []
+    l = 0
+    for item in database_decoded:
+      key = item[0]
+      if key == 'otrk':
+        otrk_data = []
+        otrk_item = item[1]
+        for item in otrk_item:
+          if item[0] == 'pfil':
+            pfil_value = re.sub(find, replace, item[1])
+            l = l + 1
+            print('Replacing {}: {}'.format(l, pfil_value))
+            otrk_data.append((item[0], pfil_value))
+          else:
+            otrk_data.append(item)
+        output.append((key, otrk_data))
+      else:
+        output.append(item)
+    encoded_db = Encode(output)
+    temp_database_file = os.path.join(temp_database, 'database V2')
+    print('Writing updates: ' + temp_database_file)
+    with open(temp_database_file, 'w+b') as new_db:
+      new_db.write(encoded_db)
+    menu = str(input('\nEnter [y]es to apply changes: ').lower())
+    if re.match('y|yes', menu.lower()):
+      BackupDatabase(database_location)
+      MoveDatabase(database_location, temp_database)
+      print('Done')
+      time.sleep(1)
+    else:
+      print()
+      logging.info('Not applying changes')
+      time.sleep(2)
+      main()
+
+### Move temp database to Serato database location
+def MoveDatabase(database_location, temp_database):
+  try:
+    logging.info('Moving temp database {} to {}'.format(temp_database, database_location))
+    shutil.copytree(temp_database, database_location, dirs_exist_ok=True, symlinks=True)
+  except:
+    logging.exception('Error moving database')
+
+def Help():
+  print('\n\033[1mSerato Crate Folder Sync'+ '\033[0m\n\n\tThis tool allows you to take a folder of music and create crates/subcrates in Serato DJ.\n')
+  print('\n\033[1mHow does it work?\033[0m\n\n\tThis program will create new or update existing crate files in _Serato_/Subcrates with the music folder\n\tyou choose.\n\n\tYour database V2 file is scanned to find folders where your music is located.\n\n\tNew files are added to _Serato_/Subcrates/*.crate files. These changes are picked up by Serato DJ and added to \n\tyour database by Serato DJ.')
+  print('\n\033[1mOptions\033[0m\n')
+  print('\tB\tBackup your _Serato_ database to a _Serato_Backups folder. Note: This will not backup any recordings.\n')
+  print('\tD\tChange to another _Serato_ database folder (only available when multiple databases found - usually with \n\t\tinternal and external drives).\n')
+  print('\tM\tSet the folder where the music is you want to add to Serato.\n')
+  print('\tP\tSet parent folder as a parent crate. This is useful for external drives; it keeps the crates on the external \n\t\tseparate from internal crates.\n')
+  print('\tX\tRebuild subcrates will overwrite existing crate files with the music found in the selected folders.\n')
+  print('\tS\tSynchronize your music folders to Serato crates. It will display the actions it will take a prompt you before \n\t\tapplying changes. Before applying changes, a backup of your existing _Serato_ folder will be taken.\n')
+  print('\n\033[1mAdditional Information\033[0m\n')
+  print('\tLogs\tLog files are stored in the _Serato_/Logs folder. They contain additonal information for troubleshooting.\n')
+  input('\n\nPress ENTER to continue')
+  main()
+
+if __name__ == '__main__':
+  if os.name == 'posix':
+    main()
