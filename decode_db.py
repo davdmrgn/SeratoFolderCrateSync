@@ -434,7 +434,7 @@ def ReplacePath(database_location, database_decoded):
     menu = str(input('\nEnter [y]es to apply changes: ').lower())
     if re.match('y|yes', menu.lower()):
       BackupDatabase(database_location)
-      MoveDatabase(database_location, temp_database)
+      ApplyChanges(database_location, temp_database)
       print('Done')
       time.sleep(1)
     else:
@@ -443,7 +443,7 @@ def ReplacePath(database_location, database_decoded):
       time.sleep(2)
 
 ### Move temp database to Serato database location
-def MoveDatabase(database_location, temp_database):
+def ApplyChanges(database_location, temp_database):
   try:
     logging.info('Moving temp database {} to {}'.format(temp_database, database_location))
     copy_ignore = shutil.ignore_patterns('DJ.INFO')
@@ -465,7 +465,7 @@ def SyncCrates(database_music, database_location, config, rebuild):
     menu = str(input('\nEnter [y]es to apply changes: ').lower())
     if re.match('y|yes', menu.lower()):
       BackupDatabase(database_location)
-      MoveDatabase(database_location, temp_database)
+      ApplyChanges(database_location, temp_database)
       print('Done')
       time.sleep(1)
     else:
