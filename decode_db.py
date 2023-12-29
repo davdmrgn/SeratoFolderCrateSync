@@ -191,8 +191,7 @@ def DecodeBinary(input):
 
 def Encode(input):
   l = 0
-  output = b''
-  # output = []
+  output = io.BytesIO()
   for line in input:
     key = line[0]
     key_binary = key.encode('utf-8')
@@ -216,11 +215,9 @@ def Encode(input):
         o_length_binary = struct.pack('>I', len(o_value_binary))
         value_binary += (o_key_binary + o_length_binary + o_value_binary)
     length_binary = struct.pack('>I', len(value_binary))
-    output += (key_binary + length_binary + value_binary)
-    # output.write(key_binary + length_binary + value_binary)
+    output.write(key_binary + length_binary + value_binary)
   logging.debug('Encoded {} objects\n'.format(l))
-  return output
-  #return.getvalue()
+  return output.getvalue()
 
 def ReadDatabase(database_location):
   database_file = os.path.join(database_location, 'database V2')
