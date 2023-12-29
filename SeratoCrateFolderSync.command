@@ -356,7 +356,7 @@ def BackupDatabase(database_location):
     logging.info('Backing up database at {} to {}'.format(database_location, backup_folder))
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
     shutil.copytree(database_location, backup_folder, ignore=copy_ignore, symlinks=True)
-    print('\nDone!')
+    print('Backup Done!')
   except:
     logging.exception('Error backing up database')
 
@@ -449,7 +449,7 @@ def SyncCrates(database_music, database_location, config, rebuild):
     if re.match('y|yes', menu.lower()):
       BackupDatabase(database_location)
       ApplyChanges(database_location, temp_database)
-      print('Done')
+      print('Sync Done!')
       time.sleep(1)
     else:
       print()
