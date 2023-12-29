@@ -21,8 +21,6 @@ def Header():
 def Main():
   database_location = FindDatabase()
   config = ConfigFile(database_location)
-  # config = configparser.ConfigParser()
-  # config.read(config_location)
   include_parent_crate = config['crates']['include_parent_crate']
   database_decoded = ReadDatabase(database_location)
   database_music = DatabaseMusic(database_location, database_decoded)
@@ -150,8 +148,6 @@ def ConfigFile(database_location):
   return config
 
 def ToggleParentFolderAsCrate(config, database_location):
-  # config = configparser.ConfigParser()
-  # config.read(config_location)
   include_parent_crate = config['crates']['include_parent_crate']
   if include_parent_crate == 'True':
     include_parent_crate = 'False'
@@ -329,8 +325,6 @@ def ShowInfo(database_location, config, logfile, database_music):
   config_location = os.path.join(database_location, 'Logs', 'SeratoCrateFolderSync.ini')
   logging.info('Configuration File: {}'.format(config_location))
   logging.info('Log File: {}'.format(logfile))
-  # config = configparser.ConfigParser()
-  # config.read(config)
   include_parent_crate = config['crates']['include_parent_crate']
   logging.info('\nDatabase Files: {}'.format(len(database_music[0])) if len(database_music[1]) == 0 else '\nDatabase Files: {} ({} Missing)'.format(len(database_music[0]), len(database_music[1])))
   logging.info('\nInclude Parent Folder as Crate:  {}'.format('YES' if include_parent_crate == 'True' else 'NO'))
@@ -339,8 +333,6 @@ def MusicFolderObjects(music_folder, config):
   logging.info('\nMusic Folder: {}'.format(music_folder))
   music_folder_files = []
   music_folder_folders = []
-  # config = configparser.ConfigParser()
-  # config.read(config)
   include_parent_crate = config['crates']['include_parent_crate']
   for root, dirs, files in os.walk(music_folder):
     if include_parent_crate == 'True':
@@ -396,7 +388,6 @@ def ReplacePathFind(music_folder):
 
 def ReplacePath(database_location, database_decoded):
   temp_database = MakeTempDatabase(database_location)
-  # database_decoded = ReadDatabase(temp_database)
   database_music = DatabaseMusic(temp_database, database_decoded)
   music_folder = MusicFolder(database_music)
   find = ReplacePathFind(music_folder)
@@ -449,12 +440,7 @@ def ApplyChanges(database_location, temp_database):
     logging.exception('Error moving database')
 
 def SyncCrates(database_music, database_location, config, rebuild):
-  # config = configparser.ConfigParser()
-  # config.read(config)
-  # include_parent_crate = config['crates']['include_parent_crate']
   temp_database = MakeTempDatabase(database_location)
-  # database_decoded = ReadDatabase(temp_database)
-  # database_music = DatabaseMusic(temp_database, database_decoded)
   music_folder = MusicFolder(database_music)
   crate_check = CrateCheck(temp_database, music_folder, config, rebuild)
   if crate_check > 0:
