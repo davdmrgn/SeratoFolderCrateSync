@@ -20,15 +20,15 @@ def Header():
 
 def Main():
   database_location = FindDatabase()
-  config_location = ConfigFile(database_location)
-  config = configparser.ConfigParser()
-  config.read(config_location)
+  config = ConfigFile(database_location)
+  # config = configparser.ConfigParser()
+  # config.read(config_location)
   include_parent_crate = config['crates']['include_parent_crate']
   database_decoded = ReadDatabase(database_location)
   database_music = DatabaseMusic(database_location, database_decoded)
   music_folder = MusicFolder(database_music)
-  ShowInfo(database_location, config_location, logfile, database_music)
-  music_folder_objects = MusicFolderObjects(music_folder, config_location)
+  ShowInfo(database_location, config, logfile, database_music)
+  music_folder_objects = MusicFolderObjects(music_folder, config)
   menu = ShowMenu(include_parent_crate, database_location, music_folder, music_folder_objects)
   if menu == 'a':
     menu = AdvancedMenu()
@@ -40,37 +40,37 @@ def Main():
       ReplacePath(database_location, database_decoded)
       Header()
       Main()
+    elif menu == 'x':
+      SyncCrates(database_music, database_location, config, 'True')
   elif menu == 's':
-    SyncCrates(database_decoded, database_location, config_location, 'False')
+    SyncCrates(database_music, database_location, config, 'False')
+  elif menu == 'p':
+    ToggleParentFolderAsCrate(config, database_location)
   elif menu == 'h':
     Help()
     Header()
     Main()
   elif menu == 'q':
     logging.debug('Session end')
-    sys.exit(1)
+    sys.exit(0)
   else:
     print('Invalid option')
     time.sleep(1)
     ShowMenu(include_parent_crate, database_location, music_folder, music_folder_objects)
 
 def ShowMenu(include_parent_crate, database_location, music_folder, music_folder_objects):
-  print('\nA. Advanced Options')
-  print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
   if database_location and music_folder and len(music_folder_objects[1]) > 1 and len(music_folder_objects[0]) > len(music_folder_objects[1]):
-    print('X. Rebuild subcrates from scratch')
-    print()
-    print('\033[1m' + 'S. Synchronize music folders to Serato crates' + '\033[0m')
-    print()
+    print('\n\033[1mS. Synchronize music folders to Serato crates\033[0m\n')
+  print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
+  print('A. Advanced Options')
   print('H. Help')
-  print()
-  print('Q. Quit')
+  print('\nQ. Quit')
   menu = str(input('\nSelect an option: ').lower())
   return menu
 
 def AdvancedMenu():
-  print()
-  print('B. Backup Database')
+  print('\nB. Backup Database')
+  print('X. Rebuild subcrates from scratch')
   print('U. Update music folder path in database')
   menu = str(input('\nSelect an option: ').lower())
   return menu
@@ -147,7 +147,21 @@ def ConfigFile(database_location):
     os.makedirs(os.path.dirname(config_location), exist_ok=True)
     with open(config_location, 'w') as config_file:
       config.write(config_file)
-  return config_location
+  return config
+
+def ToggleParentFolderAsCrate(config, database_location):
+  # config = configparser.ConfigParser()
+  # config.read(config_location)
+  include_parent_crate = config['crates']['include_parent_crate']
+  if include_parent_crate == 'True':
+    include_parent_crate = 'False'
+  else:
+    include_parent_crate = 'True'
+  config_location = os.path.join(database_location, 'Logs', 'SeratoCrateFolderSync.ini')
+  config.set('crates', 'include_parent_crate', include_parent_crate)
+  with open(config_location, 'w') as config_file:
+    config.write(config_file)
+  Main()
 
 def DecodeBinary(input):
   output = []
@@ -204,14 +218,15 @@ def Encode(input):
     length_binary = struct.pack('>I', len(value_binary))
     output += (key_binary + length_binary + value_binary)
     # output.write(key_binary + length_binary + value_binary)
-  print('Encoded {} objects\n'.format(l))
-  return output#.getvalue()
+  logging.debug('Encoded {} objects\n'.format(l))
+  return output
+  #return.getvalue()
 
 def ReadDatabase(database_location):
   database_file = os.path.join(database_location, 'database V2')
   if os.path.exists(database_file):
     StartLogging(database_location)
-    logging.info('\nReading Serato database: {}'.format(database_file))
+    logging.info('Reading Serato database: {}'.format(database_file))
     with open(database_file, 'rb') as db:
       database_binary = db.read()
     database_decoded = DecodeBinary(database_binary)
@@ -223,7 +238,7 @@ def ReadDatabase(database_location):
 def DatabaseMusic(database_location, database_decoded):
   database_music = []
   database_music_missing = []
-  logging.info('\n{}Extracting song file locations from database'.format('\033[1F\033[K'))
+  logging.info('{}Extracting song file locations from database'.format('\n\033[1F\033[K'))
   if re.match('/Volumes', database_location):
     file_base = database_location.split('_Serato_')[0]
   else:
@@ -312,22 +327,23 @@ def SelectMusicFolder(found_folders):
     time.sleep(3)
     return filedialog.askdirectory()
 
-def ShowInfo(database_location, config_location, logfile, database_music):
+def ShowInfo(database_location, config, logfile, database_music):
   logging.info('\n{}\nSerato Database: {}'.format('\033[1F\033[K', database_location))
+  config_location = os.path.join(database_location, 'Logs', 'SeratoCrateFolderSync.ini')
   logging.info('Configuration File: {}'.format(config_location))
   logging.info('Log File: {}'.format(logfile))
-  config = configparser.ConfigParser()
-  config.read(config_location)
+  # config = configparser.ConfigParser()
+  # config.read(config)
   include_parent_crate = config['crates']['include_parent_crate']
   logging.info('\nDatabase Files: {}'.format(len(database_music[0])) if len(database_music[1]) == 0 else '\nDatabase Files: {} ({} Missing)'.format(len(database_music[0]), len(database_music[1])))
   logging.info('\nInclude Parent Folder as Crate:  {}'.format('YES' if include_parent_crate == 'True' else 'NO'))
 
-def MusicFolderObjects(music_folder, config_location):
+def MusicFolderObjects(music_folder, config):
   logging.info('\nMusic Folder: {}'.format(music_folder))
   music_folder_files = []
   music_folder_folders = []
-  config = configparser.ConfigParser()
-  config.read(config_location)
+  # config = configparser.ConfigParser()
+  # config.read(config)
   include_parent_crate = config['crates']['include_parent_crate']
   for root, dirs, files in os.walk(music_folder):
     if include_parent_crate == 'True':
@@ -357,7 +373,7 @@ def BackupDatabase(database_location):
 
 def MakeTempDatabase(database_location):
   try:
-    tempdir = os.path.join(database_location + 'Temp')
+    tempdir = os.path.join(database_location, 'Temp')
     logging.debug('Create temporary database at {}'.format(tempdir))
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
     if os.path.exists(tempdir):
@@ -435,17 +451,17 @@ def MoveDatabase(database_location, temp_database):
   except:
     logging.exception('Error moving database')
 
-def SyncCrates(database_decoded, database_location, config_location, rebuild):
-  config = configparser.ConfigParser()
-  config.read(config_location)
-  include_parent_crate = config['crates']['include_parent_crate']
+def SyncCrates(database_music, database_location, config, rebuild):
+  # config = configparser.ConfigParser()
+  # config.read(config)
+  # include_parent_crate = config['crates']['include_parent_crate']
   temp_database = MakeTempDatabase(database_location)
   # database_decoded = ReadDatabase(temp_database)
-  database_music = DatabaseMusic(temp_database, database_decoded)
+  # database_music = DatabaseMusic(temp_database, database_decoded)
   music_folder = MusicFolder(database_music)
-  crate_check = CrateCheck(temp_database, music_folder, include_parent_crate, rebuild)
+  crate_check = CrateCheck(temp_database, music_folder, config, rebuild)
   if crate_check > 0:
-    logging.info('{} crates updated.'.format(crate_check))
+    logging.info('{} crate{} updated'.format(crate_check, 's' if crate_check > 1 else ''))
     menu = str(input('\nEnter [y]es to apply changes: ').lower())
     if re.match('y|yes', menu.lower()):
       BackupDatabase(database_location)
@@ -468,8 +484,9 @@ def SyncCrates(database_decoded, database_location, config_location, rebuild):
     shutil.rmtree(temp_database)
 
 ### Check for existing crate, add if needed
-def CrateCheck(temp_database, music_folder, include_parent_crate, rebuild):
+def CrateCheck(temp_database, music_folder, config, rebuild):
   updates = 0
+  include_parent_crate = config['crates']['include_parent_crate']
   music_subfolders = []
   for root, dirs, files in os.walk(music_folder):
       if include_parent_crate == 'True':
@@ -491,7 +508,7 @@ def CrateCheck(temp_database, music_folder, include_parent_crate, rebuild):
         os.remove(crate_path)
         updates += BuildCrate(crate_path, music_subfolder)
       else:
-        logging.info('Crate exists: {}'.format(crate_path))
+        logging.debug('{}Crate exists: {}'.format('\033[1F\033[K', crate_path))
         updates += ExistingCrate(crate_path, music_subfolder)
     else:
       logging.info('Crate does not exist: {}'.format(crate_path))
@@ -527,6 +544,8 @@ def ExistingCrate(crate_path, music_subfolder):
     with open(crate_path, 'w+b') as new_crate:
       new_crate.write(crate_encoded)
     return 1
+  else:
+    return 0
 
 ### Build a new crate from scratch
 def BuildCrate(crate_path, music_subfolder):
