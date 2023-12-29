@@ -10,7 +10,8 @@ import shutil
 import io
 
 
-a = '/Volumes/Ten/Google Drive/Serato/_Serato_iMac/Subcrates/Crates 9%%DJ Tools.crate'
+# a = '/Volumes/Ten/Google Drive/Serato/_Serato_iMac/Subcrates/Crates 9%%DJ Tools.crate'
+a = '/Users/dave/Music/_Serato_/Subcrates/Crates 9%%DJ Tools.crate'
 with open(a, 'rb') as b:
   data = b.read()
 
@@ -41,25 +42,37 @@ def DecodeBinary(input):
   return(output)
 
 decoded_crate = DecodeBinary(data)
-print()
-# b'ptrk\x00\x00\x00\xa0\x00U\x00s\x00e\x00r\x00s\x00/\x00d\x00a\x00v\x00e\x00/\x00M\x00u\x00s\x00i\x00c\x00/\x00C\x00r\x00a\x00t\x00e\x00s\x00/\x00C\x00r\x00a\x00t\x00e\x00s\x00 \x009\x00/\x00D\x00J\x00 \x00T\x00o\x00o\x00l\x00s\x00/\x00A\x00l\x00a\x00n\x00 \x00P\x00a\x00r\x00s\x00o\x00n\x00s\x00 \x00P\x00r\x00o\x00j\x00e\x00c\x00t\x00 \x00-\x00 \x00S\x00i\x00r\x00i\x00u\x00s\x00 \x00[\x00P\x00S\x00]\x00.\x00m\x00p\x003'
 
-# def DecodeBinary2(input):
-#   output = []
-#   i = 0
-#   l = 0
-#   while i < len(input):
-#     j = i + 4
-#     key_binary = input[i:j]
-#     key = key_binary.decode('utf-8')
-#     k = j + 4
-#     length_binary = input[j:k]
-#     length = struct.unpack('>I', length_binary)[0]
-#     value_binary = input[k:k + length]
-#     output.append((key, value_binary))
-#     i += 8 + length
-#   return(output)
+def Encode(input):
+  l = 0
+  output = io.BytesIO()
+  for line in input:
+    key = line[0]
+    key_binary = key.encode('utf-8')
+    if key == 'vrsn':
+      value = line[1]
+      value_binary = value.encode('utf-16-be')
+    elif re.match('^o', key):
+      o_values = line[1]
+      l = l + 1
+      if len(o_values) != 1:
+        print('Encoding {}: {}'.format(l, o_values[1][1]))
+      value_binary = b''
+      for line in o_values:
+        o_key = line[0]
+        o_key_binary = o_key.encode('utf-8')
+        o_value = line[1]
+        if isinstance(o_value, bytes):
+          o_value_binary = o_value
+        else:
+          o_value_binary = o_value.encode('utf-16-be')
+        o_length_binary = struct.pack('>I', len(o_value_binary))
+        value_binary += (o_key_binary + o_length_binary + o_value_binary)
+    length_binary = struct.pack('>I', len(value_binary))
+    output.write(key_binary + length_binary + value_binary)
+  print('Encoded {} files'.format(l))
+  return output.getvalue()
 
-# decoded_crate = DecodeBinary2(data)
+encoded_crate = Encode(decoded_crate)
 
-
+print(encoded_crate)

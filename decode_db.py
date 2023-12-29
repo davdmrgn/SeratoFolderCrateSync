@@ -36,6 +36,8 @@ def main():
     elif menu == 'u':
       ReplacePath(database_location)
       main()
+  elif menu == 's':
+    SyncCrates(database_location, config_location, 'False')
   elif menu == 'h':
     Help()
     main()
@@ -177,21 +179,22 @@ def Encode(input):
     if key == 'vrsn':
       value = line[1]
       value_binary = value.encode('utf-16-be')
-    elif key == 'otrk':
-      otrk_values = line[1]
+    elif re.match('^o', key):
+      o_values = line[1]
       l = l + 1
-      print('Encoding {}: {}'.format(l, otrk_values[1][1]))
+      if len(o_values) != 1:
+        print('Encoding {}: {}'.format(l, o_values[1][1]))
       value_binary = b''
-      for line in otrk_values:
-        otrk_key = line[0]
-        otrk_key_binary = otrk_key.encode('utf-8')
-        otrk_value = line[1]
-        if isinstance(otrk_value, bytes):
-          otrk_value_binary = otrk_value
+      for line in o_values:
+        o_key = line[0]
+        o_key_binary = o_key.encode('utf-8')
+        o_value = line[1]
+        if isinstance(o_value, bytes):
+          o_value_binary = o_value
         else:
-          otrk_value_binary = otrk_value.encode('utf-16-be')
-        otrk_length_binary = struct.pack('>I', len(otrk_value_binary))
-        value_binary += (otrk_key_binary + otrk_length_binary + otrk_value_binary)
+          o_value_binary = o_value.encode('utf-16-be')
+        o_length_binary = struct.pack('>I', len(o_value_binary))
+        value_binary += (o_key_binary + o_length_binary + o_value_binary)
     length_binary = struct.pack('>I', len(value_binary))
     output.write(key_binary + length_binary + value_binary)
   print('Encoded {} files'.format(l))
@@ -424,7 +427,7 @@ def MoveDatabase(database_location, temp_database):
   except:
     logging.exception('Error moving database')
 
-def SyncCrates(database_location, config_location, reubild):
+def SyncCrates(database_location, config_location, rebuild):
   config = configparser.ConfigParser()
   config.read(config_location)
   include_parent_crate = config['crates']['include_parent_crate']
@@ -432,7 +435,7 @@ def SyncCrates(database_location, config_location, reubild):
   database_decoded = ReadDatabase(temp_database)
   database_music = DatabaseMusic(temp_database, database_decoded)
   music_folder = MusicFolder(database_music)
-  CrateCheck(temp_database, music_folder, include_parent_crate)
+  CrateCheck(temp_database, music_folder, include_parent_crate, rebuild)
 
 ### Check for existing crate, add if needed
 def CrateCheck(temp_database, music_folder, include_parent_crate, rebuild):
@@ -447,9 +450,9 @@ def CrateCheck(temp_database, music_folder, include_parent_crate, rebuild):
   for folder in music_subfolders:
     logging.debug('Music folder: {}'.format(folder))
     if include_parent_crate == 'True':
-      crate_name = music_folder.replace(music_folder, os.path.basename(folder)).replace('/', '%%') + '.crate'
+      crate_name = folder.replace(music_folder, os.path.basename(folder)).replace('/', '%%') + '.crate'
     else:
-      crate_name = music_folder.replace(music_folder, '')[1:].replace('/', '%%') + '.crate'
+      crate_name = folder.replace(music_folder, '')[1:].replace('/', '%%') + '.crate'
     crate_path = os.path.join(temp_database, 'Subcrates', crate_name)
     if os.path.exists(crate_path):
       if rebuild == 'True':
@@ -464,10 +467,16 @@ def CrateCheck(temp_database, music_folder, include_parent_crate, rebuild):
       BuildCrate(crate_path, music_folder)
 
 def ExistingCrate(crate_path, music_folder):
-  crate_name = os.path.split(crate_path)[-1]
   with open(crate_path, 'rb') as f:
     crate_binary = f.read()
   crate_decoded = DecodeBinary(crate_binary)
+  crate_files = []
+  for line in crate_decoded:
+    key = line[0]
+    if key == 'otrk':
+      crate_files.append(line[1][0][1])
+  crate_name = os.path.split(crate_path)[-1]
+  updates = 0
   for file in sorted(os.listdir(music_folder)):
     if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
       if re.match('/Volumes', music_folder):
@@ -477,14 +486,14 @@ def ExistingCrate(crate_path, music_folder):
       else:
         file_path = os.path.join(music_folder, file)[1:]
         file_full_path = '/' + file_path
-      for i in crate_decoded:
-        if i[0] == 'otrk':
-          db_path = i[1][0][1]
-          if db_path == file_path:
-            ### THIS IS NOT WORKING AND WHERE I'M STUCK.
-            ### COMMITTING TO MOVE TO OTHER MACHINE.
-            ### OLD WAY LEAVES EVERYTHING IN BINARY FOR EASY SEARCHING.
-            ### FINDING THE FILE PATH IN A NESTED TUPLE IS NOT EASY.
+      if file_path not in crate_files:
+        logging.info('Adding {} to {}'.format(file_path, crate_name.replace('%%', u' \u2771 ')))
+        crate_decoded.append(('otrk', [('ptrk', file_path)]))
+        updates += 1
+  if updates > 0:
+    crate_encoded = Encode(crate_decoded)
+    with open(crate_path, 'w+b') as new_crate:
+      new_crate.write(crate_encoded)
 
 ### Build a new crate from scratch
 
