@@ -11,12 +11,14 @@ import sys
 import shutil
 import io
 
-def main():
-  print('\n')
+def Header():
+  print()
   print('╔══════════════════════════════════════════════════════════════════╗')
   print('║                     Serato Crate Folder Sync                     ║')
   print('╚══════════════════════════════════════════════════════════════════╝')
+  print()
 
+def main():
   database_location = FindDatabase()
   config_location = ConfigFile(database_location)
   config = configparser.ConfigParser()
@@ -32,14 +34,17 @@ def main():
     menu = AdvancedMenu()
     if menu == 'b':
       BackupDatabase(database_location)
+      Header()
       main()
     elif menu == 'u':
       ReplacePath(database_location)
+      Header()
       main()
   elif menu == 's':
     SyncCrates(database_location, config_location, 'False')
   elif menu == 'h':
     Help()
+    Header()
     main()
   elif menu == 'q':
     logging.debug('Session end')
@@ -255,7 +260,7 @@ def MusicFolder(database_music):
   ### Find directories with shortest length and sub directories
   intersected_dirs = set(top_folders).intersection(set(folder_counts))
 
-  ### Compile a list of instersected directories and add counts
+  ### Compile a list of intersected directories and add counts
   found_folders = {}
   for folder_name in intersected_dirs:
     logging.debug('Intersected directory: {}'.format(folder_name))
@@ -381,6 +386,7 @@ def ReplacePath(database_location):
   music_folder = MusicFolder(database_music)
   find = ReplacePathFind(music_folder)
   if len(find) == 0:
+    Header()
     main()
   else:
     replace = str(input(' Enter the new replacement path: '))
@@ -417,7 +423,6 @@ def ReplacePath(database_location):
       print()
       logging.info('Not applying changes')
       time.sleep(2)
-      main()
 
 ### Move temp database to Serato database location
 def MoveDatabase(database_location, temp_database):
@@ -470,6 +475,7 @@ def ExistingCrate(crate_path, music_folder):
   with open(crate_path, 'rb') as f:
     crate_binary = f.read()
   crate_decoded = DecodeBinary(crate_binary)
+  crate_length = len(crate_decoded)
   crate_files = []
   for line in crate_decoded:
     key = line[0]
@@ -489,13 +495,33 @@ def ExistingCrate(crate_path, music_folder):
       if file_path not in crate_files:
         logging.info('Adding {} to {}'.format(file_path, crate_name.replace('%%', u' \u2771 ')))
         crate_decoded.append(('otrk', [('ptrk', file_path)]))
-        updates += 1
-  if updates > 0:
+        # Minor note to remember I removed the lines to check file against database for stdout (existing vs new file)
+  if len(crate_decoded) > crate_length:
     crate_encoded = Encode(crate_decoded)
     with open(crate_path, 'w+b') as new_crate:
       new_crate.write(crate_encoded)
 
 ### Build a new crate from scratch
+def BuildCrate(crate_path, music_folder):
+  crate_name = os.path.split(crate_path)[-1]
+  crate_data = []
+  crate_data.append([('vrsn', '1.0/Serato ScratchLive Crate')])
+  crate_data.append([('osrt', [('tvcn', 'bpm')])])
+  crate_data.append([('ovct', [('tvcn', 'song')]), ('ovct', [('tvcn', 'artist')]), ('ovct', [('tvcn', 'bpm')]), ('ovct', [('tvcn', 'key')]), ('ovct', [('tvcn', 'year')]), ('ovct', [('tvcn', 'added')])])
+  for file in sorted(os.listdir(music_folder)):
+    if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
+      if re.match('/Volumes', music_folder):
+        music_root = os.path.split(crate_path)[0]
+        file_path = os.path.join(music_folder.replace(music_root, '')[1:], file)
+        file_full_path = os.path.join(music_root, file_path)
+      else:
+        file_path = os.path.join(music_folder[1:], file)
+        file_full_path = '/' + file_path
+      logging.info('Adding {} to {}'.format(file_path, crate_name.replace('%%', u' \u2771 ')))
+      crate_data.append([('otrk', [('ptrk', file_path)])])
+  crate_binary = Encode(crate_data)
+  with open(crate_path, 'w+b') as crate_file:
+    crate_file.write(crate_binary)
 
 def Help():
   print('\n\033[1mSerato Crate Folder Sync'+ '\033[0m\n\n\tThis tool allows you to take a folder of music and create crates/subcrates in Serato DJ.\n')
@@ -508,10 +534,11 @@ def Help():
   print('\tX\tRebuild subcrates will overwrite existing crate files with the music found in the selected folders.\n')
   print('\tS\tSynchronize your music folders to Serato crates. It will display the actions it will take a prompt you before \n\t\tapplying changes. Before applying changes, a backup of your existing _Serato_ folder will be taken.\n')
   print('\n\033[1mAdditional Information\033[0m\n')
-  print('\tLogs\tLog files are stored in the _Serato_/Logs folder. They contain additonal information for troubleshooting.\n')
-  input('\n\nPress ENTER to continue')
+  print('\tLogs\tLog files are stored in the _Serato_/Logs folder. They contain additional information for troubleshooting.\n')
+  input('\n\nPress any key to continue')
   main()
 
 if __name__ == '__main__':
   if os.name == 'posix':
+    Header()
     main()
