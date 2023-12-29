@@ -18,7 +18,7 @@ def Header():
   print('╚══════════════════════════════════════════════════════════════════╝')
   print()
 
-def main():
+def Main():
   database_location = FindDatabase()
   config_location = ConfigFile(database_location)
   config = configparser.ConfigParser()
@@ -35,17 +35,17 @@ def main():
     if menu == 'b':
       BackupDatabase(database_location)
       Header()
-      main()
+      Main()
     elif menu == 'u':
-      ReplacePath(database_location)
+      ReplacePath(database_location, database_decoded)
       Header()
-      main()
+      Main()
   elif menu == 's':
-    SyncCrates(database_location, config_location, 'False')
+    SyncCrates(database_decoded, database_location, config_location, 'False')
   elif menu == 'h':
     Help()
     Header()
-    main()
+    Main()
   elif menu == 'q':
     logging.debug('Session end')
     sys.exit(1)
@@ -177,7 +177,8 @@ def DecodeBinary(input):
 
 def Encode(input):
   l = 0
-  output = io.BytesIO()
+  output = b''
+  # output = []
   for line in input:
     key = line[0]
     key_binary = key.encode('utf-8')
@@ -201,9 +202,10 @@ def Encode(input):
         o_length_binary = struct.pack('>I', len(o_value_binary))
         value_binary += (o_key_binary + o_length_binary + o_value_binary)
     length_binary = struct.pack('>I', len(value_binary))
-    output.write(key_binary + length_binary + value_binary)
-  print('Encoded {} files'.format(l))
-  return output.getvalue()
+    output += (key_binary + length_binary + value_binary)
+    # output.write(key_binary + length_binary + value_binary)
+  print('Encoded {} objects\n'.format(l))
+  return output#.getvalue()
 
 def ReadDatabase(database_location):
   database_file = os.path.join(database_location, 'database V2')
@@ -231,7 +233,7 @@ def DatabaseMusic(database_location, database_decoded):
       file_path = os.path.join(file_base, line[1][1][1])
       if os.path.exists(file_path):
         terminal_width = os.get_terminal_size().columns - 20
-        print('Adding {}: {}'.format(len(database_music) + 1, file_path[:terminal_width]), end='\033[K\r')
+        print('{}: {}'.format(len(database_music) + 1, file_path[:terminal_width]), end='\033[K\r')
         database_music.append(file_path)
       else:
         logging.warning('{}MISSING!{} {}'.format('\r\033[K\033[1;33m', '\033[0m', file_path))
@@ -367,7 +369,7 @@ def MakeTempDatabase(database_location):
     logging.exception('We ran into a problem at make_temp_database')
 
 def ReplacePathFind(music_folder):
-  print('\nMusic folder is: {}'.format(music_folder))
+  print('\n\n Music folder is: {}'.format(music_folder))
   a = str(input('\n Enter the portion of the path to replace: '))
   if len(a) > 1 and re.search(a, music_folder):
     return a
@@ -379,17 +381,17 @@ def ReplacePathFind(music_folder):
     time.sleep(1)
     ReplacePathFind(music_folder)
 
-def ReplacePath(database_location):
+def ReplacePath(database_location, database_decoded):
   temp_database = MakeTempDatabase(database_location)
-  database_decoded = ReadDatabase(temp_database)
+  # database_decoded = ReadDatabase(temp_database)
   database_music = DatabaseMusic(temp_database, database_decoded)
   music_folder = MusicFolder(database_music)
   find = ReplacePathFind(music_folder)
   if len(find) == 0:
     Header()
-    main()
+    Main()
   else:
-    replace = str(input(' Enter the new replacement path: '))
+    replace = str(input(' Enter the new replacement portion: '))
     output = []
     l = 0
     for item in database_decoded:
@@ -428,22 +430,46 @@ def ReplacePath(database_location):
 def MoveDatabase(database_location, temp_database):
   try:
     logging.info('Moving temp database {} to {}'.format(temp_database, database_location))
-    shutil.copytree(temp_database, database_location, dirs_exist_ok=True, symlinks=True)
+    copy_ignore = shutil.ignore_patterns('DJ.INFO')
+    shutil.copytree(temp_database, database_location, dirs_exist_ok=True, symlinks=True, ignore=copy_ignore)
   except:
     logging.exception('Error moving database')
 
-def SyncCrates(database_location, config_location, rebuild):
+def SyncCrates(database_decoded, database_location, config_location, rebuild):
   config = configparser.ConfigParser()
   config.read(config_location)
   include_parent_crate = config['crates']['include_parent_crate']
   temp_database = MakeTempDatabase(database_location)
-  database_decoded = ReadDatabase(temp_database)
+  # database_decoded = ReadDatabase(temp_database)
   database_music = DatabaseMusic(temp_database, database_decoded)
   music_folder = MusicFolder(database_music)
-  CrateCheck(temp_database, music_folder, include_parent_crate, rebuild)
+  crate_check = CrateCheck(temp_database, music_folder, include_parent_crate, rebuild)
+  if crate_check > 0:
+    logging.info('{} crates updated.'.format(crate_check))
+    menu = str(input('\nEnter [y]es to apply changes: ').lower())
+    if re.match('y|yes', menu.lower()):
+      BackupDatabase(database_location)
+      MoveDatabase(database_location, temp_database)
+      print('Done')
+      time.sleep(1)
+    else:
+      print()
+      logging.info('Not applying changes')
+      time.sleep(2)
+      Header()
+      Main()
+  else:
+    logging.info('\nNo crate updates required')
+    time.sleep(1)
+    Header()
+    Main()
+  if os.path.exists(temp_database):
+    logging.debug('Removing temporary database at {}'.format(temp_database))
+    shutil.rmtree(temp_database)
 
 ### Check for existing crate, add if needed
 def CrateCheck(temp_database, music_folder, include_parent_crate, rebuild):
+  updates = 0
   music_subfolders = []
   for root, dirs, files in os.walk(music_folder):
       if include_parent_crate == 'True':
@@ -452,26 +478,27 @@ def CrateCheck(temp_database, music_folder, include_parent_crate, rebuild):
         for dir in dirs:
           music_subfolders.append(os.path.join(root, dir))
       music_subfolders.sort()
-  for folder in music_subfolders:
-    logging.debug('Music folder: {}'.format(folder))
+  for music_subfolder in music_subfolders:
+    logging.debug('Music subfolder: {}'.format(music_subfolder))
     if include_parent_crate == 'True':
-      crate_name = folder.replace(music_folder, os.path.basename(folder)).replace('/', '%%') + '.crate'
+      crate_name = music_subfolder.replace(music_folder, os.path.basename(music_subfolder)).replace('/', '%%') + '.crate'
     else:
-      crate_name = folder.replace(music_folder, '')[1:].replace('/', '%%') + '.crate'
+      crate_name = music_subfolder.replace(music_folder, '')[1:].replace('/', '%%') + '.crate'
     crate_path = os.path.join(temp_database, 'Subcrates', crate_name)
     if os.path.exists(crate_path):
       if rebuild == 'True':
         logging.info('Rebuilding crate: {}'.format(crate_path))
         os.remove(crate_path)
-        BuildCrate(crate_path, music_folder)
+        updates += BuildCrate(crate_path, music_subfolder)
       else:
-        logging.debug('Crate exists: {}'.format(crate_path))
-        ExistingCrate(crate_path, music_folder)
+        logging.info('Crate exists: {}'.format(crate_path))
+        updates += ExistingCrate(crate_path, music_subfolder)
     else:
-      logging.debug('Crate does not exist: {}'.format(crate_path))
-      BuildCrate(crate_path, music_folder)
+      logging.info('Crate does not exist: {}'.format(crate_path))
+      updates += BuildCrate(crate_path, music_subfolder)
+  return updates
 
-def ExistingCrate(crate_path, music_folder):
+def ExistingCrate(crate_path, music_subfolder):
   with open(crate_path, 'rb') as f:
     crate_binary = f.read()
   crate_decoded = DecodeBinary(crate_binary)
@@ -482,15 +509,14 @@ def ExistingCrate(crate_path, music_folder):
     if key == 'otrk':
       crate_files.append(line[1][0][1])
   crate_name = os.path.split(crate_path)[-1]
-  updates = 0
-  for file in sorted(os.listdir(music_folder)):
+  for file in sorted(os.listdir(music_subfolder)):
     if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
-      if re.match('/Volumes', music_folder):
+      if re.match('/Volumes', music_subfolder):
         music_root = os.path.split(crate_path)[0]
-        file_path = os.path.join(music_folder.replace(music_root, '')[1:], file)
+        file_path = os.path.join(music_subfolder.replace(music_root, '')[1:], file)
         file_full_path = os.path.join(music_root, file_path)
       else:
-        file_path = os.path.join(music_folder, file)[1:]
+        file_path = os.path.join(music_subfolder, file)[1:]
         file_full_path = '/' + file_path
       if file_path not in crate_files:
         logging.info('Adding {} to {}'.format(file_path, crate_name.replace('%%', u' \u2771 ')))
@@ -500,28 +526,30 @@ def ExistingCrate(crate_path, music_folder):
     crate_encoded = Encode(crate_decoded)
     with open(crate_path, 'w+b') as new_crate:
       new_crate.write(crate_encoded)
+    return 1
 
 ### Build a new crate from scratch
-def BuildCrate(crate_path, music_folder):
+def BuildCrate(crate_path, music_subfolder):
   crate_name = os.path.split(crate_path)[-1]
   crate_data = []
-  crate_data.append([('vrsn', '1.0/Serato ScratchLive Crate')])
-  crate_data.append([('osrt', [('tvcn', 'bpm')])])
-  crate_data.append([('ovct', [('tvcn', 'song')]), ('ovct', [('tvcn', 'artist')]), ('ovct', [('tvcn', 'bpm')]), ('ovct', [('tvcn', 'key')]), ('ovct', [('tvcn', 'year')]), ('ovct', [('tvcn', 'added')])])
-  for file in sorted(os.listdir(music_folder)):
+  crate_data.append(('vrsn', '1.0/Serato ScratchLive Crate'))
+  crate_data.append(('osrt', [('tvcn', 'bpm')]))
+  crate_data.append(('ovct', [('tvcn', 'song')], ('ovct', [('tvcn', 'artist')]), ('ovct', [('tvcn', 'bpm')]), ('ovct', [('tvcn', 'key')]), ('ovct', [('tvcn', 'year')]), ('ovct', [('tvcn', 'added')])))
+  for file in sorted(os.listdir(music_subfolder)):
     if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
-      if re.match('/Volumes', music_folder):
+      if re.match('/Volumes', music_subfolder):
         music_root = os.path.split(crate_path)[0]
-        file_path = os.path.join(music_folder.replace(music_root, '')[1:], file)
+        file_path = os.path.join(music_subfolder.replace(music_root, '')[1:], file)
         file_full_path = os.path.join(music_root, file_path)
       else:
-        file_path = os.path.join(music_folder[1:], file)
+        file_path = os.path.join(music_subfolder[1:], file)
         file_full_path = '/' + file_path
       logging.info('Adding {} to {}'.format(file_path, crate_name.replace('%%', u' \u2771 ')))
-      crate_data.append([('otrk', [('ptrk', file_path)])])
+      crate_data.append(('otrk', [('ptrk', file_path)]))
   crate_binary = Encode(crate_data)
   with open(crate_path, 'w+b') as crate_file:
     crate_file.write(crate_binary)
+  return 1
 
 def Help():
   print('\n\033[1mSerato Crate Folder Sync'+ '\033[0m\n\n\tThis tool allows you to take a folder of music and create crates/subcrates in Serato DJ.\n')
@@ -536,9 +564,9 @@ def Help():
   print('\n\033[1mAdditional Information\033[0m\n')
   print('\tLogs\tLog files are stored in the _Serato_/Logs folder. They contain additional information for troubleshooting.\n')
   input('\n\nPress any key to continue')
-  main()
+  Main()
 
 if __name__ == '__main__':
   if os.name == 'posix':
     Header()
-    main()
+    Main()
