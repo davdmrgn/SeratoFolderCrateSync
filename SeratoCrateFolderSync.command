@@ -614,6 +614,32 @@ def BuildCrate(crate_path, music_subfolder):
     crate_file.write(crate_binary)
   return 1
 
+
+
+### Not in use - experimental
+def Export(database_decoded):
+  export = []
+  for d in database_decoded[:5]:
+    if d[0] == 'otrk':
+      filepath = d[1][1][1]
+      title = d[1][2][1]
+      artist = d[1][3][1]
+      album = d[1][4][1]
+      genre = d[1][5][1]
+      length = d[1][6][1]
+      size = d[1][7][1]
+      bitrate = d[1][8][1]
+      bpm = d[1][9][1]
+      comment = d[1][10][1]
+      year = d[1][11][1]
+      date_added = d[1][12][1]
+      key = d[1][13][1]
+      columns = [filepath, title, artist, album, genre, length, size, bitrate, bpm, comment, year, date_added, key]
+      columns_joined = '\t'.join(columns)
+      export.append(columns_joined, '\n')
+
+
+
 def Help():
   print('\n\033[1mSerato Crate Folder Sync'+ '\033[0m\n\n\tThis tool allows you to take a folder of music and create crates/subcrates in Serato DJ.\n')
   print('\n\033[1mHow does it work?\033[0m\n\n\tThis program will create new or update existing crate files in _Serato_/Subcrates with the music folder\n\tyou choose.\n\n\tYour database V2 file is scanned to find folders where your music is located.\n\n\tNew files are added to _Serato_/Subcrates/*.crate files. These changes are picked up by Serato DJ and added to \n\tyour database by Serato DJ.')
