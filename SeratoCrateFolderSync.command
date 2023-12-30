@@ -20,12 +20,13 @@ def Header():
 
 def Main():
   database_location = FindDatabase()
+  log_location = StartLogging(database_location)
   config = ConfigFile(database_location)
   include_parent_crate = config['crates']['include_parent_crate']
   database_decoded = ReadDatabase(database_location)
   database_music = DatabaseMusic(database_location, database_decoded)
   music_folder = MusicFolder(database_music)
-  ShowInfo(database_location, config, logfile, database_music)
+  ShowInfo(database_location, config, log_location, database_music)
   music_folder_objects = MusicFolderObjects(music_folder, config)
   menu = ShowMenu(include_parent_crate, database_location, music_folder, music_folder_objects)
   if menu == 'a':
@@ -35,7 +36,7 @@ def Main():
       Header()
       Main()
     elif menu == 'u':
-      ReplacePath(database_location, database_decoded)
+      ReplacePath(database_location, database_decoded, database_music)
       Header()
       Main()
     elif menu == 'x':
@@ -124,13 +125,13 @@ def SelectDatabase(serato_databases):
 ### Logging
 def StartLogging(database_location):
   now = datetime.now()
-  global logfile
-  logfile = '{}/Logs/SeratoCrateFolderSync-{}{}{}.log'.format(database_location, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day))
-  logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', force=True)
+  log_location = '{}/Logs/SeratoCrateFolderSync-{}{}{}.log'.format(database_location, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day))
+  logging.basicConfig(filename=log_location, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', force=True)
   console = logging.StreamHandler()
   console.setLevel(logging.INFO)
   logging.getLogger('').addHandler(console)
   logging.debug('Session start')
+  return log_location
 
 def ConfigFile(database_location):
   config = configparser.ConfigParser()
@@ -186,6 +187,7 @@ def DecodeBinary(input):
   return(output)
 
 def Encode(input):
+  print()
   l = 0
   output = io.BytesIO()
   for line in input:
@@ -197,8 +199,9 @@ def Encode(input):
     elif re.match('^o', key):
       o_values = line[1]
       l = l + 1
+      terminal_width = os.get_terminal_size().columns - 20
       if len(o_values) != 1:
-        print('Encoding {}: {}'.format(l, o_values[1][1]))
+        logging.info('{}Encoding {}: {}'.format('\033[1F\033[K', l, o_values[1][1][:terminal_width]))
       value_binary = b''
       for line in o_values:
         o_key = line[0]
@@ -212,7 +215,7 @@ def Encode(input):
         value_binary += (o_key_binary + o_length_binary + o_value_binary)
     length_binary = struct.pack('>I', len(value_binary))
     output.write(key_binary + length_binary + value_binary)
-  logging.debug('Encoded {} objects\n'.format(l))
+  logging.info('{}Encoded {} objects{}'.format('\033[1F', l, '\033[K\n'))
   return output.getvalue()
 
 def ReadDatabase(database_location):
@@ -241,7 +244,7 @@ def DatabaseMusic(database_location, database_decoded):
       file_path = os.path.join(file_base, line[1][1][1])
       if os.path.exists(file_path):
         terminal_width = os.get_terminal_size().columns - 20
-        print('{}: {}'.format(len(database_music) + 1, file_path[:terminal_width]), end='\033[K\r')
+        print('Reading {}: {}'.format(len(database_music) + 1, file_path[:terminal_width]), end='\033[K\r')
         database_music.append(file_path)
       else:
         logging.warning('{}MISSING!{} {}'.format('\r\033[K\033[1;33m', '\033[0m', file_path))
@@ -320,11 +323,11 @@ def SelectMusicFolder(found_folders):
     time.sleep(3)
     return filedialog.askdirectory()
 
-def ShowInfo(database_location, config, logfile, database_music):
-  logging.info('\n{}\nSerato Database: {}'.format('\033[1F\033[K', database_location))
+def ShowInfo(database_location, config, log_location, database_music):
+  logging.info('{}Serato Database: {}'.format('\r\033[K\n', database_location))
   config_location = os.path.join(database_location, 'Logs', 'SeratoCrateFolderSync.ini')
   logging.info('Configuration File: {}'.format(config_location))
-  logging.info('Log File: {}'.format(logfile))
+  logging.info('Log File: {}'.format(log_location))
   include_parent_crate = config['crates']['include_parent_crate']
   logging.info('\nDatabase Files: {}'.format(len(database_music[0])) if len(database_music[1]) == 0 else '\nDatabase Files: {} ({} Missing)'.format(len(database_music[0]), len(database_music[1])))
   logging.info('\nInclude Parent Folder as Crate:  {}'.format('YES' if include_parent_crate == 'True' else 'NO'))
@@ -386,9 +389,8 @@ def ReplacePathFind(music_folder):
     time.sleep(1)
     ReplacePathFind(music_folder)
 
-def ReplacePath(database_location, database_decoded):
+def ReplacePath(database_location, database_decoded, database_music):
   temp_database = MakeTempDatabase(database_location)
-  database_music = DatabaseMusic(temp_database, database_decoded)
   music_folder = MusicFolder(database_music)
   find = ReplacePathFind(music_folder)
   if len(find) == 0:
@@ -407,7 +409,7 @@ def ReplacePath(database_location, database_decoded):
           if item[0] == 'pfil':
             pfil_value = re.sub(find, replace, item[1])
             l = l + 1
-            print('Replacing {}: {}'.format(l, pfil_value))
+            logging.info('Replacing {}: {}'.format(l, pfil_value))
             otrk_data.append((item[0], pfil_value))
           else:
             otrk_data.append(item)
@@ -416,18 +418,17 @@ def ReplacePath(database_location, database_decoded):
         output.append(item)
     encoded_db = Encode(output)
     temp_database_file = os.path.join(temp_database, 'database V2')
-    print('Writing updates: ' + temp_database_file)
+    logging.info('Writing updates: ' + temp_database_file)
     with open(temp_database_file, 'w+b') as new_db:
       new_db.write(encoded_db)
     menu = str(input('\nEnter [y]es to apply changes: ').lower())
     if re.match('y|yes', menu.lower()):
       BackupDatabase(database_location)
       ApplyChanges(database_location, temp_database)
-      print('Done')
+      logging.info('Replace Done!')
       time.sleep(1)
     else:
-      print()
-      logging.info('Not applying changes')
+      logging.info('\nNot applying changes')
       time.sleep(2)
 
 ### Move temp database to Serato database location
@@ -458,7 +459,7 @@ def SyncCrates(database_music, database_location, config, rebuild):
       Header()
       Main()
   else:
-    logging.info('\nNo crate updates required')
+    logging.info('\033[K\rNo crate updates required')
     time.sleep(1)
     Header()
     Main()
