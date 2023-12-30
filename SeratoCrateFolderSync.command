@@ -262,7 +262,10 @@ def MusicFolder(database_music):
   ### Get all folders from all files
   folder_names = []
   for file in database_music[0]:
-    folder_names.append(os.path.dirname(file))
+    folder = os.path.dirname(file)
+    if folder not in folder_names:
+      folder_names.append(os.path.dirname(file))
+  folder_names.sort()
 
   ### Top level directories, by length
   top_folders = sorted(set(folder_names), key=len)[:10]
