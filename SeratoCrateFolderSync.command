@@ -19,32 +19,35 @@ def Header():
   print()
 
 def Main():
-  database_location = FindDatabase()
-  log_location = StartLogging(database_location)
-  config = ConfigFile(database_location)
+  serato_folder = FindDatabase()
+  backup_folder = os.path.join(serato_folder + 'Backups')
+  log_location = StartLogging(serato_folder)
+  config = ConfigFile(serato_folder)
   include_parent_crate = config['crates']['include_parent_crate']
-  database_decoded = ReadDatabase(database_location)
-  database_music = DatabaseMusic(database_location, database_decoded)
+  database_decoded = ReadDatabase(serato_folder)
+  database_music = DatabaseMusic(serato_folder, database_decoded)
   music_folder = MusicFolder(database_music)
-  ShowInfo(database_location, config, log_location, database_music)
+  ShowInfo(serato_folder, config, log_location, database_music)
   music_folder_objects = MusicFolderObjects(music_folder, config)
-  menu = ShowMenu(include_parent_crate, database_location, music_folder, music_folder_objects)
+  menu = ShowMenu(include_parent_crate, serato_folder, music_folder, music_folder_objects)
   if menu == 'a':
-    menu = AdvancedMenu()
+    menu = AdvancedMenu(backup_folder)
     if menu == 'b':
-      BackupDatabase(database_location)
+      BackupDatabase(serato_folder)
       Header()
       Main()
+    elif menu == 'r':
+      RestoreDatabase(backup_folder, serato_folder)
     elif menu == 'u':
-      ReplacePath(database_location, database_decoded, database_music)
+      ReplacePath(serato_folder, database_decoded, database_music)
       Header()
       Main()
     elif menu == 'x':
-      SyncCrates(database_music, database_location, config, 'True')
+      SyncCrates(database_music, serato_folder, config, 'True')
   elif menu == 's':
-    SyncCrates(database_music, database_location, config, 'False')
+    SyncCrates(database_music, serato_folder, config, 'False')
   elif menu == 'p':
-    ToggleParentFolderAsCrate(config, database_location)
+    ToggleParentFolderAsCrate(config, serato_folder)
   elif menu == 'h':
     Help()
     Header()
@@ -55,10 +58,10 @@ def Main():
   else:
     print('Invalid option')
     time.sleep(1)
-    ShowMenu(include_parent_crate, database_location, music_folder, music_folder_objects)
+    ShowMenu(include_parent_crate, serato_folder, music_folder, music_folder_objects)
 
-def ShowMenu(include_parent_crate, database_location, music_folder, music_folder_objects):
-  if database_location and music_folder and len(music_folder_objects[1]) > 1 and len(music_folder_objects[0]) > len(music_folder_objects[1]):
+def ShowMenu(include_parent_crate, serato_folder, music_folder, music_folder_objects):
+  if serato_folder and music_folder and len(music_folder_objects[1]) > 1 and len(music_folder_objects[0]) > len(music_folder_objects[1]):
     print('\n\033[1mS. Synchronize music folders to Serato crates\033[0m\n')
   print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
   print('A. Advanced Options')
@@ -67,8 +70,10 @@ def ShowMenu(include_parent_crate, database_location, music_folder, music_folder
   menu = str(input('\nSelect an option: ').lower())
   return menu
 
-def AdvancedMenu():
+def AdvancedMenu(backup_folder):
   print('\nB. Backup Database')
+  if os.path.exists(backup_folder):
+    print('R. Restore database from backup')
   print('X. Rebuild subcrates from scratch')
   print('U. Update music folder path in database')
   menu = str(input('\nSelect an option: ').lower())
@@ -123,9 +128,9 @@ def SelectDatabase(serato_databases):
       return(serato_databases[menu - 1])
 
 ### Logging
-def StartLogging(database_location):
+def StartLogging(serato_folder):
   now = datetime.now()
-  log_location = '{}/Logs/SeratoCrateFolderSync-{}{}{}.log'.format(database_location, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day))
+  log_location = '{}/Logs/SeratoCrateFolderSync-{}{}{}.log'.format(serato_folder, str(now.year), '{:02d}'.format(now.month), '{:02d}'.format(now.day))
   logging.basicConfig(filename=log_location, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', force=True)
   console = logging.StreamHandler()
   console.setLevel(logging.INFO)
@@ -133,9 +138,9 @@ def StartLogging(database_location):
   logging.debug('Session start')
   return log_location
 
-def ConfigFile(database_location):
+def ConfigFile(serato_folder):
   config = configparser.ConfigParser()
-  config_location = os.path.join(database_location, 'Logs', 'SeratoCrateFolderSync.ini')
+  config_location = os.path.join(serato_folder, 'Logs', 'SeratoCrateFolderSync.ini')
   if os.path.exists(config_location):
     config.read(config_location)
   else:
@@ -148,13 +153,13 @@ def ConfigFile(database_location):
       config.write(config_file)
   return config
 
-def ToggleParentFolderAsCrate(config, database_location):
+def ToggleParentFolderAsCrate(config, serato_folder):
   include_parent_crate = config['crates']['include_parent_crate']
   if include_parent_crate == 'True':
     include_parent_crate = 'False'
   else:
     include_parent_crate = 'True'
-  config_location = os.path.join(database_location, 'Logs', 'SeratoCrateFolderSync.ini')
+  config_location = os.path.join(serato_folder, 'Logs', 'SeratoCrateFolderSync.ini')
   config.set('crates', 'include_parent_crate', include_parent_crate)
   with open(config_location, 'w') as config_file:
     config.write(config_file)
@@ -218,10 +223,10 @@ def Encode(input):
   logging.info('{}Encoded {} objects{}'.format('\033[1F', l, '\033[K\n'))
   return output.getvalue()
 
-def ReadDatabase(database_location):
-  database_file = os.path.join(database_location, 'database V2')
+def ReadDatabase(serato_folder):
+  database_file = os.path.join(serato_folder, 'database V2')
   if os.path.exists(database_file):
-    StartLogging(database_location)
+    StartLogging(serato_folder)
     logging.info('Reading Serato database: {}'.format(database_file))
     with open(database_file, 'rb') as db:
       database_binary = db.read()
@@ -231,12 +236,12 @@ def ReadDatabase(database_location):
     print('\nSerato database not found!')
     sys.exit(1)
 
-def DatabaseMusic(database_location, database_decoded):
+def DatabaseMusic(serato_folder, database_decoded):
   database_music = []
   database_music_missing = []
   logging.info('{}Extracting song file locations from database'.format('\n\033[1F\033[K'))
-  if re.match('/Volumes', database_location):
-    file_base = database_location.split('_Serato_')[0]
+  if re.match('/Volumes', serato_folder):
+    file_base = serato_folder.split('_Serato_')[0]
   else:
     file_base = '/'
   for line in database_decoded:
@@ -323,9 +328,9 @@ def SelectMusicFolder(found_folders):
     time.sleep(3)
     return filedialog.askdirectory()
 
-def ShowInfo(database_location, config, log_location, database_music):
-  logging.info('{}Serato Database: {}'.format('\r\033[K\n', database_location))
-  config_location = os.path.join(database_location, 'Logs', 'SeratoCrateFolderSync.ini')
+def ShowInfo(serato_folder, config, log_location, database_music):
+  logging.info('{}Serato Database: {}'.format('\r\033[K\n', serato_folder))
+  config_location = os.path.join(serato_folder, 'Logs', 'SeratoCrateFolderSync.ini')
   logging.info('Configuration File: {}'.format(config_location))
   logging.info('Log File: {}'.format(log_location))
   include_parent_crate = config['crates']['include_parent_crate']
@@ -351,30 +356,82 @@ def MusicFolderObjects(music_folder, config):
   return music_folder_files, music_folder_folders
 
 ### Backup existing database
-def BackupDatabase(database_location):
+def BackupDatabase(serato_folder):
   try:
     now = datetime.now()
-    backup_folder = database_location + 'Backups/' + '_Serato_{}{}{}-{}{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute), '{:02d}'.format(now.second))
+    backup_folder_now = serato_folder + 'Backups/' + '_Serato_{}{}{}-{}{}{}'.format(now.year, '{:02d}'.format(now.month), '{:02d}'.format(now.day), '{:02d}'.format(now.hour), '{:02d}'.format(now.minute), '{:02d}'.format(now.second))
     print()
-    logging.info('Backing up database at {} to {}'.format(database_location, backup_folder))
-    copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
-    shutil.copytree(database_location, backup_folder, ignore=copy_ignore, symlinks=True)
-    print('Backup Done!')
+    logging.info('Backing up database at {} to {}'.format(serato_folder, backup_folder_now))
+    copy_ignore = shutil.ignore_patterns('.git*', 'Recording*', 'DJ.INFO')
+    shutil.copytree(serato_folder, backup_folder_now, ignore=copy_ignore, symlinks=True)
+    print('Backup done!')
   except:
     logging.exception('Error backing up database')
 
-def MakeTempDatabase(database_location):
+def MakeTempDatabase(serato_folder):
   try:
-    tempdir = os.path.join(database_location, 'Temp')
+    tempdir = os.path.join(serato_folder + 'Temp')
     logging.debug('Create temporary database at {}'.format(tempdir))
-    copy_ignore = shutil.ignore_patterns('.git*', 'Recording*')
+    copy_ignore = shutil.ignore_patterns('.git*', 'Recording*', 'DJ.INFO')
     if os.path.exists(tempdir):
       logging.warning('Removing existing temporary database at {}'.format(tempdir))
       shutil.rmtree(tempdir)
-    shutil.copytree(database_location, tempdir, ignore=copy_ignore, symlinks=True)
+    shutil.copytree(serato_folder, tempdir, ignore=copy_ignore, symlinks=True)
     return(tempdir)
   except:
     logging.exception('We ran into a problem at make_temp_database')
+
+### Restore database backup
+def RestoreDatabase(backup_folder, serato_folder):
+  if os.path.exists(backup_folder):
+    backups = []
+    for backup in os.listdir(backup_folder):
+      full_path = os.path.join(backup_folder, backup)
+      if os.path.isdir(full_path):
+        backups.append(full_path)
+    if len(backups) > 0:
+      logging.info('\nRestore from backup\n')
+      backups.sort()
+      for number, path in enumerate(backups):
+        print(' {}. {}'.format(number + 1, path))
+      while True:
+        menu = input('\nSelect a backup to restore: ')
+        try:
+          if menu == '':
+            menu = 0
+          else:
+            menu = int(menu)
+        except ValueError:
+          logging.error('Invalid option')
+          time.sleep(1)
+        else:
+          break
+      if menu > 0 and menu <= len(backups):
+        print(backups[menu - 1])
+        restore_folder = backups[menu - 1]
+        if os.path.exists(restore_folder):
+          answer = str(input('\nEnter [y]es to backup current database and restore\n {}: '.format(restore_folder)).lower())
+          if re.match('y|yes', answer):
+            try:
+              BackupDatabase(serato_folder)
+              # subcrates_path = os.path.join(serato_folder, 'Subcrates')
+              # logging.debug('Restore: Removing subcrates folder {}'.format(subcrates_path))
+              # shutil.rmtree(subcrates_path)
+              logging.info('Restoring from backup: {}'.format(restore_folder))
+              copy_ignore = shutil.ignore_patterns('.git*', 'Recording*', 'DJ.INFO')
+              shutil.copytree(restore_folder, serato_folder, ignore=copy_ignore, symlinks=True, dirs_exist_ok=True)
+              logging.info('Restore done!')
+            except:
+              logging.error('Error restoring database')
+          else:
+            print('\nNOPE')
+      else:
+        pass
+  else:
+    logging.error('Backup folder not found')
+    time.sleep(1)
+  Header()
+  Main()
 
 def ReplacePathFind(music_folder):
   print('\n\n Music folder is: {}'.format(music_folder))
@@ -389,8 +446,8 @@ def ReplacePathFind(music_folder):
     time.sleep(1)
     ReplacePathFind(music_folder)
 
-def ReplacePath(database_location, database_decoded, database_music):
-  temp_database = MakeTempDatabase(database_location)
+def ReplacePath(serato_folder, database_decoded, database_music):
+  temp_database = MakeTempDatabase(serato_folder)
   music_folder = MusicFolder(database_music)
   find = ReplacePathFind(music_folder)
   if len(find) == 0:
@@ -423,33 +480,33 @@ def ReplacePath(database_location, database_decoded, database_music):
       new_db.write(encoded_db)
     menu = str(input('\nEnter [y]es to apply changes: ').lower())
     if re.match('y|yes', menu.lower()):
-      BackupDatabase(database_location)
-      ApplyChanges(database_location, temp_database)
-      logging.info('Replace Done!')
+      BackupDatabase(serato_folder)
+      ApplyChanges(serato_folder, temp_database)
+      logging.info('Replace done!')
       time.sleep(1)
     else:
       logging.info('\nNot applying changes')
       time.sleep(2)
 
 ### Move temp database to Serato database location
-def ApplyChanges(database_location, temp_database):
+def ApplyChanges(serato_folder, temp_database):
   try:
-    logging.info('Moving temp database {} to {}'.format(temp_database, database_location))
+    logging.info('Moving temp database {} to {}'.format(temp_database, serato_folder))
     copy_ignore = shutil.ignore_patterns('DJ.INFO')
-    shutil.copytree(temp_database, database_location, dirs_exist_ok=True, symlinks=True, ignore=copy_ignore)
+    shutil.copytree(temp_database, serato_folder, dirs_exist_ok=True, symlinks=True, ignore=copy_ignore)
   except:
     logging.exception('Error moving database')
 
-def SyncCrates(database_music, database_location, config, rebuild):
-  temp_database = MakeTempDatabase(database_location)
+def SyncCrates(database_music, serato_folder, config, rebuild):
+  temp_database = MakeTempDatabase(serato_folder)
   music_folder = MusicFolder(database_music)
   crate_check = CrateCheck(temp_database, music_folder, config, rebuild)
   if crate_check > 0:
     logging.info('{} crate{} updated'.format(crate_check, 's' if crate_check > 1 else ''))
     menu = str(input('\nEnter [y]es to apply changes: ').lower())
     if re.match('y|yes', menu.lower()):
-      BackupDatabase(database_location)
-      ApplyChanges(database_location, temp_database)
+      BackupDatabase(serato_folder)
+      ApplyChanges(serato_folder, temp_database)
       print('Sync Done!')
       time.sleep(1)
     else:
