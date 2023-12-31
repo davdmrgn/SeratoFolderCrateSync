@@ -57,7 +57,7 @@ def Main():
       logging.debug('Session end')
       sys.exit(0)
     else:
-      print('Invalid option')
+      logging.error('Invalid option')
       time.sleep(1)
 
 def ShowMenu(include_parent_crate, serato_folder, music_folder, music_folder_objects):
@@ -104,14 +104,14 @@ def SelectDatabase(serato_databases):
     from tkinter import filedialog
     root = tkinter.Tk()
     root.withdraw()
-    print('Select a Serato database folder using the file chooser')
+    logging.info('Select a Serato database folder using the file chooser')
     time.sleep(3)
     return filedialog.askdirectory()
   else:
-    print('{} Serato databases found\n'.format(len(serato_databases)))
+    logging.info('{} Serato databases found\n'.format(len(serato_databases)))
     for number, path in enumerate(serato_databases):
-      print(' {}. {}'.format(number + 1, path))
-    print('\n {}. Select a new path'.format(len(serato_databases) + 1))
+      logging.info(' {}. {}'.format(number + 1, path))
+    logging.info('\n {}. Select a new path'.format(len(serato_databases) + 1))
     while True:
       menu = input('\nSelect an option: ')
       try:
@@ -120,7 +120,7 @@ def SelectDatabase(serato_databases):
         else:
           menu = int(menu)
       except ValueError:
-        print('Invalid option')
+        logging.error('Invalid option')
         time.sleep(1)
       else:
         break
@@ -233,7 +233,7 @@ def ReadDatabase(serato_folder):
     database_decoded = DecodeBinary(database_binary)
     return database_decoded
   else:
-    print('\nSerato database not found!')
+    logging.error('\n{}Serato database not found!{}'.format('\033[1;33m', '\033[0m'))
     sys.exit(1)
 
 def DatabaseMusic(serato_folder, database_decoded):
@@ -367,7 +367,7 @@ def BackupDatabase(serato_folder):
     logging.info('Backing up database at {} to {}'.format(serato_folder, backup_folder_now))
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*', 'DJ.INFO')
     shutil.copytree(serato_folder, backup_folder_now, ignore=copy_ignore, symlinks=True)
-    print('{}Backup done!{}'.format('\033[1;32m', '\033[0m'))
+    logging.info('{}Backup done!{}'.format('\033[1;32m', '\033[0m'))
   except:
     logging.exception('Error backing up database')
 
@@ -425,27 +425,27 @@ def RestoreDatabase(backup_folder, serato_folder):
               shutil.copytree(restore_folder, serato_folder, ignore=copy_ignore, symlinks=True, dirs_exist_ok=True)
               logging.info('{}Restore done!{}'.format('\033[1;32m', '\033[0m'))
             except:
-              logging.error('Error restoring database')
+              logging.error('{}Error restoring database{}'.format('\033[1;33m', '\033[0m'))
           else:
-            print('\nNOPE')
+            logging.warning('\nNOPE')
       else:
         pass
   else:
-    logging.error('Backup folder not found')
+    logging.error('{}Backup folder not found{}'.format('\033[1;33m', '\033[0m'))
     time.sleep(1)
   Header()
   Main()
 
 def ReplacePathFind(music_folder):
-  print('\n\n Music folder is: {}'.format(music_folder))
+  logging.info('\n\n Music folder is: {}'.format(music_folder))
   a = str(input('\n Enter the portion of the path to replace: '))
   if len(a) > 1 and re.search(a, music_folder):
     return a
   elif len(a) == 0:
-    print('Nope')
+    logging.warning('Nope')
     return ''
   else:
-    print('Invalid input')
+    logging.error('Invalid input')
     time.sleep(1)
     ReplacePathFind(music_folder)
 
@@ -510,7 +510,7 @@ def SyncCrates(database_music, serato_folder, config, rebuild):
     if re.match('y|yes', menu.lower()):
       BackupDatabase(serato_folder)
       ApplyChanges(serato_folder, temp_database)
-      print('{}Sync done!{}'.format('\033[1;32m', '\033[0m'))
+      logging.info('{}Sync done!{}'.format('\033[1;32m', '\033[0m'))
       time.sleep(1)
     else:
       print()
