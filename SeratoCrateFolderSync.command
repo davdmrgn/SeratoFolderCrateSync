@@ -29,36 +29,36 @@ def Main():
   music_folder = MusicFolder(database_music)
   ShowInfo(serato_folder, config, log_location, database_music)
   music_folder_objects = MusicFolderObjects(music_folder, config)
-  menu = ShowMenu(include_parent_crate, serato_folder, music_folder, music_folder_objects)
-  if menu == 'a':
-    menu = AdvancedMenu(backup_folder)
-    if menu == 'b':
-      BackupDatabase(serato_folder)
+  while True:
+    menu = ShowMenu(include_parent_crate, serato_folder, music_folder, music_folder_objects)
+    if menu == 'a':
+      menu = AdvancedMenu(backup_folder)
+      if menu == 'b':
+        BackupDatabase(serato_folder)
+        Header()
+        Main()
+      elif menu == 'r':
+        RestoreDatabase(backup_folder, serato_folder)
+      elif menu == 'u':
+        ReplacePath(serato_folder, database_decoded, database_music)
+        Header()
+        Main()
+      elif menu == 'x':
+        SyncCrates(database_music, serato_folder, config, 'True')
+    elif menu == 's':
+      SyncCrates(database_music, serato_folder, config, 'False')
+    elif menu == 'p':
+      ToggleParentFolderAsCrate(config, serato_folder)
+    elif menu == 'h':
+      Help()
       Header()
       Main()
-    elif menu == 'r':
-      RestoreDatabase(backup_folder, serato_folder)
-    elif menu == 'u':
-      ReplacePath(serato_folder, database_decoded, database_music)
-      Header()
-      Main()
-    elif menu == 'x':
-      SyncCrates(database_music, serato_folder, config, 'True')
-  elif menu == 's':
-    SyncCrates(database_music, serato_folder, config, 'False')
-  elif menu == 'p':
-    ToggleParentFolderAsCrate(config, serato_folder)
-  elif menu == 'h':
-    Help()
-    Header()
-    Main()
-  elif menu == 'q':
-    logging.debug('Session end')
-    sys.exit(0)
-  else:
-    print('Invalid option')
-    time.sleep(1)
-    ShowMenu(include_parent_crate, serato_folder, music_folder, music_folder_objects)
+    elif menu == 'q':
+      logging.debug('Session end')
+      sys.exit(0)
+    else:
+      print('Invalid option')
+      time.sleep(1)
 
 def ShowMenu(include_parent_crate, serato_folder, music_folder, music_folder_objects):
   if serato_folder and music_folder and len(music_folder_objects[1]) > 1 and len(music_folder_objects[0]) > len(music_folder_objects[1]):
@@ -367,7 +367,7 @@ def BackupDatabase(serato_folder):
     logging.info('Backing up database at {} to {}'.format(serato_folder, backup_folder_now))
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*', 'DJ.INFO')
     shutil.copytree(serato_folder, backup_folder_now, ignore=copy_ignore, symlinks=True)
-    print('Backup done!')
+    print('{}Backup done!{}'.format('\033[1;32m', '\033[0m'))
   except:
     logging.exception('Error backing up database')
 
@@ -423,7 +423,7 @@ def RestoreDatabase(backup_folder, serato_folder):
               logging.info('Restoring from backup: {}'.format(restore_folder))
               copy_ignore = shutil.ignore_patterns('.git*', 'Recording*', 'DJ.INFO')
               shutil.copytree(restore_folder, serato_folder, ignore=copy_ignore, symlinks=True, dirs_exist_ok=True)
-              logging.info('Restore done!')
+              logging.info('{}Restore done!{}'.format('\033[1;32m', '\033[0m'))
             except:
               logging.error('Error restoring database')
           else:
@@ -485,10 +485,10 @@ def ReplacePath(serato_folder, database_decoded, database_music):
     if re.match('y|yes', menu.lower()):
       BackupDatabase(serato_folder)
       ApplyChanges(serato_folder, temp_database)
-      logging.info('Replace done!')
+      logging.info('{}Replace done!{}'.format('\033[1;32m', '\033[0m'))
       time.sleep(1)
     else:
-      logging.info('\nNot applying changes')
+      logging.info('\n{}Not applying changes!{}'.format('\033[1;33m', '\033[0m'))
       time.sleep(2)
 
 ### Move temp database to Serato database location
@@ -510,7 +510,7 @@ def SyncCrates(database_music, serato_folder, config, rebuild):
     if re.match('y|yes', menu.lower()):
       BackupDatabase(serato_folder)
       ApplyChanges(serato_folder, temp_database)
-      print('Sync Done!')
+      print('{}Sync done!{}'.format('\033[1;32m', '\033[0m'))
       time.sleep(1)
     else:
       print()
@@ -519,7 +519,7 @@ def SyncCrates(database_music, serato_folder, config, rebuild):
       Header()
       Main()
   else:
-    logging.info('\033[K\rNo crate updates required')
+    logging.info('\033[K\r\033[1;32mNo crate updates required\033[0m')
     time.sleep(1)
     Header()
     Main()
