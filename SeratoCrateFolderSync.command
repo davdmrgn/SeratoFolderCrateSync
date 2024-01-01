@@ -575,10 +575,10 @@ def ExistingCrate(crate_path, music_subfolder):
       if re.match('/Volumes', music_subfolder):
         music_root = os.path.split(crate_path)[0]
         file_path = os.path.join(music_subfolder.replace(music_root, '')[1:], file)
-        file_full_path = os.path.join(music_root, file_path)
+        #file_full_path = os.path.join(music_root, file_path)
       else:
         file_path = os.path.join(music_subfolder, file)[1:]
-        file_full_path = '/' + file_path
+        #file_full_path = '/' + file_path
       if file_path not in crate_files:
         logging.info('Adding {} to {}'.format(file_path, crate_name.replace('%%', u' \u2771 ')))
         crate_decoded.append(('otrk', [('ptrk', file_path)]))
@@ -603,10 +603,10 @@ def BuildCrate(crate_path, music_subfolder):
       if re.match('/Volumes', music_subfolder):
         music_root = os.path.split(crate_path)[0]
         file_path = os.path.join(music_subfolder.replace(music_root, '')[1:], file)
-        file_full_path = os.path.join(music_root, file_path)
+        #file_full_path = os.path.join(music_root, file_path)
       else:
         file_path = os.path.join(music_subfolder[1:], file)
-        file_full_path = '/' + file_path
+        #file_full_path = '/' + file_path
       logging.info('Adding {} to {}'.format(file_path, crate_name.replace('%%', u' \u2771 ')))
       crate_data.append(('otrk', [('ptrk', file_path)]))
   crate_binary = Encode(crate_data)
