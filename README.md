@@ -39,17 +39,18 @@ Syncrhonize music folders to Serato crates
 - New crates will be created; existing crates will add new songs
 - If any updates, existing crates will be backed up to `_Serato_Backups`
 - Backups will not contain files in `Recording*` directories to save disk space
-- This script only updates files in `/Subcrates` directory; does not modify:
-  - `database V2` file
+- This script updates files in `/Subcrates` directory on Sync; does not modify:
   - Smart crates
+- Can bulk find/replace path of files in `database V2` when moving library
 - Script preferences are saved to a `ini` file in `_Serato_/Logs`
 - Script saves logs in `_Serato_/Logs`
 
 ## Limitations
 
-- Not tested on Windows
+- Not supported on Windows
 - Custom crate columns not yet supported
 - Will not delete crates (recommend deleting crates manually in Serato)
+- Not all functions are fully tested
 
 <details><summary>More info</summary><p>
 
