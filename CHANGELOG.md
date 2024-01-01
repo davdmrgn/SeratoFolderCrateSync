@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.05](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.05) - 2024-01-01
+- Major code changes to support database V2 interactions
+- Can find/replace against database; useful (faster) when you move your library and don't want to use Relocate Lost Files in Serato
+
 ## [0.043](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.043) - 2023-05-08
 
 ### Fixed
