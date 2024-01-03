@@ -44,9 +44,9 @@ def Main():
         Header()
         Main()
       elif menu == 'x':
-        SyncCrates(database_music, serato_folder, config, 'True')
+        SyncCrates(serato_folder, music_folder, config, 'True')
     elif menu == 's':
-      SyncCrates(database_music, serato_folder, config, 'False')
+      SyncCrates(serato_folder, music_folder, config, 'False')
     elif menu == 'p':
       ToggleParentFolderAsCrate(config, serato_folder)
     elif menu == 'h':
@@ -61,8 +61,9 @@ def Main():
       time.sleep(1)
 
 def ShowMenu(include_parent_crate, serato_folder, music_folder, music_folder_objects):
+  print()
   if serato_folder and music_folder and len(music_folder_objects[1]) > 1 and len(music_folder_objects[0]) > len(music_folder_objects[1]):
-    print('\n\033[1mS. Synchronize music folders to Serato crates\033[0m\n')
+    print('\033[1mS. Synchronize music folders to Serato crates\033[0m\n')
   print('P. {} include parent folder as crate'.format('Disable' if include_parent_crate == 'True' else 'Enable'))
   print('A. Advanced Options')
   print('H. Help')
@@ -259,55 +260,48 @@ def DatabaseMusic(serato_folder, database_decoded):
   return database_music, database_music_missing
 
 def MusicFolder(database_music):
-  ### Get all folders from all files
-  folder_names = []
+  print('\r\033[K')
+  ### Get all folders from all files in database
+  file_folders = set()
   for file in database_music[0]:
-    folder = os.path.dirname(file)
-    if folder not in folder_names:
-      folder_names.append(os.path.dirname(file))
-  folder_names.sort()
+    file_folders.add(os.path.dirname(file))
+  file_folders = sorted(file_folders)
 
-  ### Top level directories, by length
-  top_folders = sorted(set(folder_names), key=len)[:10]
-
-  ### Filter out directories with no subfolders
-  folder_counts = {}
-  for path in top_folders:
-    for root, dirs, files in os.walk(path):
-      if len(dirs) > 1:
-        logging.debug('Found music directory {} with {} subdirectories'.format(root, len(dirs)))
-        folder_counts.update({root: len(dirs)})
-
-  ### Find directories with shortest length and sub directories
-  intersected_dirs = set(top_folders).intersection(set(folder_counts))
-
-  ### Compile a list of intersected directories and add counts
-  found_folders = {}
-  for folder_name in intersected_dirs:
-    logging.debug('Intersected directory: {}'.format(folder_name))
-    found_folders.update({folder_name: folder_counts[folder_name]})
-
-  ### Sort the counts
-  found_folders = dict(sorted(found_folders.items(), key=lambda item: item[1], reverse=True))
-  logging.debug('Found paths: {}'.format(found_folders))
-
-  folder_check = []
-  for found_folder in found_folders:
-    folder_check.append(found_folder)
-
-  if folder_check[0] == os.path.commonpath(folder_check):
-    logging.debug('Music location found: {}'.format(folder_check[0]))
-    return list(found_folders)[0]
+  commonpath = os.path.commonpath(file_folders)
+  if commonpath in file_folders and len(re.findall(commonpath, str(file_folders))) == len(file_folders):
+    logging.debug('Music location found: {}'.format(commonpath))
+    return commonpath
   else:
-    SelectMusicFolder(found_folders)
+
+    ### Search the parent of all folders and match to previous list
+    folder_names = {}
+    for path in file_folders:
+      for root, dirs, files in os.walk(os.path.dirname(path)):
+        if len(dirs) > 1 and re.findall(root, str(file_folders)):
+          logging.debug('Found music directory {} with {} subdirectories'.format(root, len(dirs)))
+          folder_names.update({root: len(dirs)})
+
+    ### Sort the counts
+    folder_names = dict(sorted(folder_names.items(), key=lambda item: item[1], reverse=True))
+    logging.debug('Found paths: {}'.format(folder_names))
+
+    folder_check = []
+    for found_folder in folder_names:
+      folder_check.append(found_folder)
+
+    if folder_check[0] == os.path.commonpath(folder_check):
+      logging.debug('Music location found: {}'.format(folder_check[0]))
+      return list(folder_names)[0]
+    else:
+      return SelectMusicFolder(folder_names)
 
 ### Change music root to sync
-def SelectMusicFolder(found_folders):
-  logging.info('\nTop {} music locations shown (from Serato database)'.format(len(found_folders)))
+def SelectMusicFolder(folders):
+  logging.info('Top {} music locations shown (from Serato database)'.format(len(folders)))
   print('\nSelect music folder to sync as subcrates\n')
-  for number, path in enumerate(found_folders):
+  for number, path in enumerate(folders):
     print(' {}. {}'.format(number + 1, path))
-  print('\n {}. Select a new path'.format(len(found_folders) + 1))
+  print('\n {}. Select a new path'.format(len(folders) + 1))
   while True:
     menu = input('\nSelect an option: ')
     try:
@@ -320,9 +314,10 @@ def SelectMusicFolder(found_folders):
       time.sleep(1)
     else:
       break
-  if menu > 0 and menu <= len(found_folders):
-    return(list(found_folders)[menu - 1])
-  elif menu == len(found_folders) + 1:
+  print()
+  if menu > 0 and menu <= len(folders):
+    return(list(folders)[menu - 1])
+  elif menu == len(folders) + 1:
     import tkinter
     from tkinter import filedialog
     root = tkinter.Tk()
@@ -332,7 +327,7 @@ def SelectMusicFolder(found_folders):
     return filedialog.askdirectory()
 
 def ShowInfo(serato_folder, config, log_location, database_music):
-  logging.info('{}Serato Database: {}'.format('\r\033[K\n', serato_folder))
+  logging.info('{}Serato Database: {}'.format('\r\033[K', serato_folder))
   config_location = os.path.join(serato_folder, 'Logs', 'SeratoCrateFolderSync.ini')
   logging.info('Configuration File: {}'.format(config_location))
   logging.info('Log File: {}'.format(log_location))
@@ -443,7 +438,7 @@ def ReplacePathFind(music_folder):
     return a
   elif len(a) == 0:
     logging.warning('Nope')
-    return ''
+    return
   else:
     logging.error('Invalid input')
     time.sleep(1)
@@ -500,9 +495,9 @@ def ApplyChanges(serato_folder, temp_database):
   except:
     logging.exception('Error moving database')
 
-def SyncCrates(database_music, serato_folder, config, rebuild):
+def SyncCrates(serato_folder, music_folder, config, rebuild):
   temp_database = MakeTempDatabase(serato_folder)
-  music_folder = MusicFolder(database_music)
+  # music_folder = MusicFolder(database_music)
   crate_check = CrateCheck(temp_database, music_folder, config, rebuild)
   if crate_check > 0:
     logging.info('{} crate{} updated'.format(crate_check, 's' if crate_check > 1 else ''))
