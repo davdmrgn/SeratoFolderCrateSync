@@ -2,7 +2,7 @@
 
 Syncrhonize music folders to Serato crates
 
-- Version: 0.051
+- Version: 0.052
 - macOS only (not tested on Windows)
 
 > I wrote this for my specific use case, with the ability to adapt to other configurations later.

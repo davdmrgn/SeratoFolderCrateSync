@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.052](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.052) - 2024-01-03
+- Moved code around and changed some logic
+- Add find/replace support for SmartCrates
+- Rename settings file to match project
+- Format methods changed to f-strings
+- Fix database selection
+- Add output for existing files in database
+
 ## [0.051](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.051) - 2024-01-03
 - Fix music paths search and selection
 
