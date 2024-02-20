@@ -68,8 +68,6 @@ class Menu:
       elif selection == 'u':
         ReplacePath.Find()
         sys.exit(0)
-      elif selection == 't':
-        Database.CheckTags()
       elif selection == 'l':
         LocateLostFiles.Init()
         sys.exit(0)

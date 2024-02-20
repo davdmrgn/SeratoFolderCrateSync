@@ -2,10 +2,10 @@
 
 Syncrhonize music folders to Serato crates
 
-- Version: 0.052
+- Version: 0.060
 - macOS only (not tested on Windows)
 
-> I wrote this for my specific use case, with the ability to adapt to other configurations later.
+> I wrote this for my specific use cases, with the ability to adapt to other configurations later.
 
 ## Requirements
 
@@ -16,17 +16,10 @@ Syncrhonize music folders to Serato crates
 
 
 - Open Terminal
-- Make file executable
+- Run the app in Terminal
   ```
-  chmod +x ./SeratoCrateFolderSync.command
+  python3 SeratoCrateFolderSync.py
   ```
-- Run the app
-  - Right-click [SeratoCrateFolderSync.command](SeratoCrateFolderSync.command) > Open
-    - Accept any security warnings
-  - or, in Terminal
-    ```
-    ./SeratoCrateFolderSync.command
-    ```
 
 ## How does it work?
 

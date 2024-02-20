@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.060](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.060) - 2024-02-19
+- Relocate lost files added
+- Check/Compare ID3 tags of files against database
+
 ## [0.052](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.052) - 2024-01-03
 - Moved code around and changed some logic
 - Add find/replace support for SmartCrates
