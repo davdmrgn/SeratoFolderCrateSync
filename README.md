@@ -2,14 +2,19 @@
 
 Syncrhonize music folders to Serato crates
 
-- Version: 0.060
-- macOS only (not tested on Windows)
+> I wrote this for me. YMMV
 
-> I wrote this for my specific use cases, with the ability to adapt to other configurations later.
+## What does it do?
+
+- Have all your music in a folder with subfolders? This sets your subfolders to subcrates.
+- Back up and restore your database (automatic backups when making changes).
+- _Relocate lost files_ like in Serato DJ.
+- Moved all your files from one directory to another? Relocate lost files taking too long? Find and replace against your database.
 
 ## Requirements
 
-- Python3
+- macOS (not tested on Windows)
+- Python 3
   > Python can be installed via Xcode Command Line Tools: `xcode-select --install`
 
 ## Usage
@@ -23,31 +28,13 @@ Syncrhonize music folders to Serato crates
   ```
   chmod +x SeratoCrateFolderSync.command
   ./SeratoCrateFolderSync.command
+  ```
   > Note: Option 2 may allow you to double-click the file from Finder to run.
-
-## How does it work?
-
-- Script will:
-  - Search for `_Serato_` database directories
-  - Scan songs in `database V2` file to find song locations
-  - Scan folders and create/update crates matching your folder structure
-  - Only apply changes to crate files with your confirmation
-- You may toggle the option to include the parent folder as a parent crate
-- New crates will be created; existing crates will add new songs
-- If any updates, existing crates will be backed up to `_Serato_Backups`
-- Backups will not contain files in `Recording*` directories to save disk space
-- This script updates files in `/Subcrates` directory on Sync; does not modify:
-  - Smart crates
-- Can bulk find/replace path of files in `database V2` when moving library
-- Script preferences are saved to a `ini` file in `_Serato_/Logs`
-- Script saves logs in `_Serato_/Logs`
 
 ## Limitations
 
-- Not supported on Windows
 - Custom crate columns not yet supported
 - Will not delete crates (recommend deleting crates manually in Serato)
-- Not all functions are fully tested
 
 <details><summary>More info</summary><p>
 

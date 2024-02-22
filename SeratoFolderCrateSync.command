@@ -16,13 +16,15 @@ class Menu:
     Menu.Options()
 
   def Info():
-    logging.info(f'\r\033[KSerato Database: {database_folder}')
+    logging.info(f'Serato Database: {database_folder}\033[K')
     logging.info(f'Configuration File: {Config.File()}')
     logging.info(f'Log File: {log}')
-    logging.info(f'\nDatabase Files:\t{len(database_music)}')
-    logging.info(f'Missing Files:\t{len(database_music_missing)}')
-    include_parent_crate = Config.Get('options', 'include_parent_crate')
-    logging.info(f'\nInclude Parent Folder as Crate: {include_parent_crate}')
+    print()
+    logging.info(f'Database Files: {len(database_music)}')
+    logging.info(f'Missing Files:  {len(database_music_missing)}')
+    include_parent_crate = Config.Get('options', 'include_parent_crate', 'False')
+    print()
+    logging.info(f'Include Parent Folder as Crate: {include_parent_crate}')
 
   def Options():
     print()
@@ -307,7 +309,7 @@ def Logger():
   console = logging.StreamHandler()
   console.setLevel(logging.INFO)
   logging.getLogger(None).addHandler(console)
-  logging.debug('Session start')
+  logging.debug('\nSession start')
   return log
 
 
@@ -323,10 +325,10 @@ class Config:
     config.read(config_file)
     return config
   
-  def Get(section, option):
+  def Get(section, option, default_value = ''):
     if not config.has_option(section, option):
-      value = input(f'\nEnter value for [{section}] : [{option}]: ')
-      Config.Set(section, option, value)
+      logging.debug(f'Setting {option} to default value: {default_value}')
+      Config.Set(section, option, default_value)
     return config.get(section, option)
   
   def Set(section, option, value):
@@ -380,7 +382,7 @@ class SeratoData:
         value = value_binary
       output.append((key, value))
       i += 8 + length
-    print('Decode complete', end='\033[K\r')
+    # print('Decode complete', end='\033[K\r')
     return output
 
   def Encode(self):
@@ -437,7 +439,8 @@ class Music:
   def Extract(self):
     database_music = []
     database_music_missing = []
-    logging.info(f'\n\033[1F\033[KExtracting song file locations from database')
+    # print()
+    logging.info(f'Extracting song file locations from database\033[K')
     if re.match('/Volumes', database_folder):
       file_base = database_folder.split('_Serato_')[0]
     else:
@@ -456,7 +459,7 @@ class Music:
 
   def Folder(self):
     """Get all folders from files in database"""
-    print('\rFinding music folder from files in database\033[K')
+    print('Finding music folder from files in database\033[K')
     file_folders = set()
     for file in self:
       """Exclude recordings in _Serato_ folder"""

@@ -1,8 +1,9 @@
 # Change Log
 
-## [0.060](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.060) - 2024-02-19
+## [0.061](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.061) - 2024-02-21
 - Relocate lost files added
 - Check/Compare ID3 tags of files against database
+- Set a default value for include parent crate if config file does not exist
 
 ## [0.052](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.052) - 2024-01-03
 - Moved code around and changed some logic
