@@ -19,7 +19,8 @@ class Menu:
     logging.info(f'\r\033[KSerato Database: {database_folder}')
     logging.info(f'Configuration File: {Config.File()}')
     logging.info(f'Log File: {log}')
-    logging.info(f'\nDatabase Files: {len(database_music)}' if len(database_music_missing) == 0 else f'\nDatabase Files: {len(database_music)} ({len(database_music_missing)} Missing)')
+    logging.info(f'\nDatabase Files:\t{len(database_music)}')
+    logging.info(f'Missing Files:\t{len(database_music_missing)}')
     include_parent_crate = Config.Get('options', 'include_parent_crate')
     logging.info(f'\nInclude Parent Folder as Crate: {include_parent_crate}')
 
