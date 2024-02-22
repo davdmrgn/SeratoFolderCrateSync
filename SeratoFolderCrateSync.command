@@ -300,7 +300,7 @@ class Select:
 
 
 def Logger():
-  log_filename = f'{os.path.split(os.path.dirname(__file__))[-1]}-{datetime.now().strftime("%Y-%m-%d")}.log'
+  log_filename = f'{os.path.splitext(os.path.basename(__file__))[0]}-{datetime.now().strftime("%Y-%m-%d")}.log'
   log = f'{database_folder}/Logs/{log_filename}'
   logging.basicConfig(filename=log, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', force=True)
   console = logging.StreamHandler()
@@ -312,7 +312,7 @@ def Logger():
 
 class Config:
   def File():
-    config_filename = f'{os.path.split(os.path.dirname(__file__))[-1]}.ini'
+    config_filename = f'{os.path.splitext(os.path.basename(__file__))[0]}.ini'
     config_path = os.path.join(database_folder, 'Logs', config_filename)
     return config_path
   
