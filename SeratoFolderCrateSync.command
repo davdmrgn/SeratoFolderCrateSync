@@ -190,8 +190,10 @@ class Database:
         serato_databases.append(volume_database)
     if len(serato_databases) == 1:
       return serato_databases[0]
-    else:
+    elif len(serato_databases) > 1:
       return Select.Item(serato_databases)
+    else:
+      return home_dir_database
     
   class Temp:
     def Create():
@@ -506,7 +508,7 @@ class Crate:
       if apply == True:
         logging.info(f'\033[92mSync done!\033[0m')
     elif crate_check == 0:
-      logging.info(f'\033[K\r\033[92mNo crate updates required\033[0m')
+      logging.info(f'\r\033[92mNo crate updates required\033[0m\033[K')
     time.sleep(1)
     Database.Temp.Remove(temp_database)
 
@@ -573,6 +575,9 @@ class Crate:
     Crate.Scan(music_subfolder, crate_name, crate_data, crate_path)
 
     crate_binary = SeratoData.Encode(crate_data)
+    if not os.path.exists(crate_path):
+      logging.info(f'\033[96mBuilding new crate file\033[0m: {crate_path}')
+      os.makedirs(os.path.dirname(crate_path), exist_ok=True)
     with open(crate_path, 'w+b') as crate_file:
       crate_file.write(crate_binary)
     return 1
@@ -663,9 +668,17 @@ if __name__ == '__main__':
     database_binary = SeratoData.Read(database)
     database_decoded = SeratoData.Decode(database_binary)
     database_music, database_music_missing = Music.Extract(database_decoded)
-    music_folder = Music.Folder(database_music)
-    while True:
-      menu_input = Menu.Print()
-      Menu.Action(menu_input)
+    if len(database_music) > 0:
+      music_folder = Music.Folder(database_music)
+      while True:
+        menu_input = Menu.Print()
+        Menu.Action(menu_input)
+    else:
+      print(f'\033[93mYou have no files in your library\033[0m')
+      time.sleep(2)
+      print('Use the file chooser to select the directory where your music is to build subcrates from scratch')
+      time.sleep(3)
+      music_folder = Select.Directory()
+      Crate.Sync(rebuild=True)
   else:
     print('macOS only right now')
