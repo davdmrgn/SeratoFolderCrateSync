@@ -509,9 +509,12 @@ class Music:
 class Crate:
   def Sync(rebuild = False):
     temp_database = Database.Temp.Create()
-    crate_check = Crate.Check(temp_database, rebuild)
+    crate_check, songs_new, songs_mod = Crate.Check(temp_database, rebuild)
+    print(f'\033[K')
     if crate_check > 0:
-      logging.info(f'{crate_check} crate{"s" if crate_check > 1 else ""} to update\033[K')
+      logging.info(f'  \033[92m+++\033[0m {songs_new} new song{"s" if songs_new > 1 else ""} to add')
+      logging.info(f'  \033[93m~~~\033[0m {songs_mod} existing song{"s" if songs_mod > 1 else ""} moved to subcrate{"s" if songs_mod > 1 else ""}')
+      logging.info(f'      {crate_check} crate{"s" if crate_check > 1 else ""} to update')
       apply = Database.Apply(temp_database)
       if apply == True:
         logging.info(f'\033[92mSync done!\033[0m')
@@ -521,7 +524,9 @@ class Crate:
     Database.Temp.Remove(temp_database)
 
   def Check(temp_database, rebuild):
-    updates = 0
+    crate_updates = 0
+    songs_new = 0
+    songs_mod = 0
     music_subfolders = []
     for root, dirs, files in os.walk(music_folder):
       include_parent_crate = Config.Get('options', 'include_parent_crate')
@@ -542,14 +547,23 @@ class Crate:
         if rebuild == True:
           logging.info(f'\033[93mRebuilding crate\033[0m: {crate_path}')
           os.remove(crate_path)
-          updates += Crate.Build(crate_path, music_subfolder)
+          crate_update = Crate.Build(crate_path, music_subfolder)
+          crate_updates += crate_update[0]
+          songs_new += crate_update[1]
+          songs_mod += crate_update[2]
         else:
           logging.debug(f'\033[1F\033[KCrate exists: {crate_path}')
-          updates += Crate.Existing(crate_path, music_subfolder)
+          crate_update = Crate.Existing(crate_path, music_subfolder)
+          crate_updates += crate_update[0]
+          songs_new += crate_update[1]
+          songs_mod += crate_update[2]
       else:
         logging.info(f'Crate does not exist: {crate_path}')
-        updates += Crate.Build(crate_path, music_subfolder)
-    return updates
+        crate_update = Crate.Build(crate_path, music_subfolder)
+        crate_updates += crate_update[0]
+        songs_new += crate_update[1]
+        songs_mod += crate_update[2]
+    return crate_updates, songs_new, songs_mod
 
   def Existing(crate_path, music_subfolder):
     with open(crate_path, 'rb') as f:
@@ -563,15 +577,15 @@ class Crate:
         crate_files.append(line[1][0][1])
     crate_name = os.path.split(crate_path)[-1]
 
-    Crate.Scan(music_subfolder, crate_name, crate_data, crate_path, crate_files)
+    songs_new, songs_mod = Crate.Scan(music_subfolder, crate_name, crate_data, crate_path, crate_files)
 
     if len(crate_data) > crate_length:
       crate_encoded = SeratoData.Encode(crate_data)
       with open(crate_path, 'w+b') as new_crate:
         new_crate.write(crate_encoded)
-      return 1
+      return 1, songs_new, songs_mod
     else:
-      return 0
+      return 0, songs_new, songs_mod
 
   def Build(crate_path, music_subfolder):
     crate_name = os.path.split(crate_path)[-1]
@@ -580,7 +594,7 @@ class Crate:
     crate_data.append(('osrt', [('tvcn', 'bpm')]))
     crate_data.append(('ovct', [('tvcn', 'song')], ('ovct', [('tvcn', 'artist')]), ('ovct', [('tvcn', 'bpm')]), ('ovct', [('tvcn', 'key')]), ('ovct', [('tvcn', 'year')]), ('ovct', [('tvcn', 'added')])))
 
-    Crate.Scan(music_subfolder, crate_name, crate_data, crate_path)
+    songs_new, songs_mod = Crate.Scan(music_subfolder, crate_name, crate_data, crate_path)
 
     crate_binary = SeratoData.Encode(crate_data)
     if not os.path.exists(crate_path):
@@ -588,9 +602,11 @@ class Crate:
       os.makedirs(os.path.dirname(crate_path), exist_ok=True)
     with open(crate_path, 'w+b') as crate_file:
       crate_file.write(crate_binary)
-    return 1
+    return 1, songs_new, songs_mod
 
   def Scan(music_subfolder, crate_name, crate_data, crate_path, crate_files = []):
+    songs_new = 0
+    songs_mod = 0
     for file in sorted(os.listdir(music_subfolder)):
       if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
         if re.match('/Volumes', music_subfolder):
@@ -602,12 +618,17 @@ class Crate:
           file_full_path = '/' + file_path
         if file_path not in crate_files:
           if file_full_path in database_music:
-            file_status = 'existing'
+            file_status_color = '\033[93m'
+            file_status = f'{file_status_color}~~~\033[0m'
+            songs_mod += 1
           else:
-            file_status = 'new'
+            file_status_color = '\033[92m'
+            file_status = f'{file_status_color}+++\033[0m'
+            songs_new += 1
           crate_name_displayname = crate_name.replace('%%', u' \u2771 ')
-          logging.info(f'Adding {file_status} file {file_full_path} to {crate_name_displayname}')
+          logging.info(f'{file_status} {file_full_path} {file_status_color}\u2771\u2771\u2771\033[0m {crate_name_displayname}')
           crate_data.append(('otrk', [('ptrk', file_path)]))
+    return songs_new, songs_mod
 
 class ReplacePath:
   def Find():
