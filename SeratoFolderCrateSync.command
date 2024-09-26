@@ -101,28 +101,38 @@ class LocateLostFiles:
     else:
       print(f'{len(database_music_missing)} missing file(s)')
       temp_database = Database.Temp.Create()
-      LocateLostFiles.Search(temp_database)
-      Database.Apply(temp_database)
+      Updates = LocateLostFiles.Search(temp_database)
+      logging.info(f'\033[93m  {Updates} files found\033[0m\033[K')
+      time.sleep(1)
+      if Updates > 0:
+        Database.Apply(temp_database)
       Database.Temp.Remove(temp_database)
 
   def Search(temp_database):
+    print('\033[93mUse the selector to choose the search folder\033[0m')
+    time.sleep(2)
+    Updates = 0
+    search_folder = Select.Directory(music_folder)
     for i, item in enumerate(database_music_missing):
-      logging.debug(f'{i}/{len(database_music_missing)} Searching for missing song(): {item}')
+      logging.debug(f'{i + 1}/{len(database_music_missing)} Searching for missing song: {item}')
       for ii, db_entry in enumerate(database_decoded[1:]):
         if item[1:] == db_entry[1][1][1]:
-          logging.debug(f'{i}/{len(database_music_missing)} Missing song location found in database: [{ii + 1}] {item}')
-          LocateLostFiles.Compare(ii + 1, temp_database)
+          logging.debug(f'{i + 1}/{len(database_music_missing)} Missing song location found in database: [{ii + 1}] {item}')
+          Found = LocateLostFiles.Compare(ii + 1, temp_database, search_folder)
+          if type(Found) is int:
+            Updates += Found
           break
+    return Updates
 
-  def Compare(ii, temp_database):
+  def Compare(ii, temp_database, search_folder):
     db_entry = database_decoded[ii]
     db_entry_filetype = db_entry[1][0][1]
     db_entry_filepath = db_entry[1][1][1]
     db_entry_filename = os.path.split(db_entry_filepath)[-1]
     db_entry_title = db_entry[1][2][1]
     db_entry_artist = db_entry[1][3][1]
-    logging.info(f'\nSearching for missing song in: {music_folder}')
-    for root, dirs, files in os.walk(music_folder):
+    logging.info(f'\033[96mSearching for missing song\033[0m: {db_entry_filepath}')
+    for root, dirs, files in os.walk(search_folder):
       for file in files:
         if file.endswith(db_entry_filetype):
           file_fullpath = os.path.join(root, file)
@@ -130,18 +140,16 @@ class LocateLostFiles:
             try:
               id3 = eyed3.load(file_fullpath)
               if id3.tag.artist == db_entry_artist and id3.tag.title == db_entry_title:
-                print(f'\033[92mFound match by ID3 TAG!\033[0m {file_fullpath}')
+                print(f'\033[92mID3 tag match\033[0m: {file_fullpath}')
                 LocateLostFiles.Update(ii, id3, temp_database)
-                # Update = True
-                break
+                return 1
               elif file == db_entry_filename:
-                print(f'\033[92mFound match by FILENAME!\033[0m {file_fullpath}')
+                print(f'\033[92mFilename match\033[0m: {file_fullpath}')
                 LocateLostFiles.Update(ii, id3, temp_database)
-                # Update = True
-                break
+                return 1
             except Exception as e:
               logging.error(f'\nProblem reading ID3 tag: {file_fullpath}')
-              break
+
 
   def Update(db_index, id3, temp_database):
     """Update database"""
@@ -152,7 +160,7 @@ class LocateLostFiles:
     database_decoded[db_index][1][25] = ('bovc', b'\x00')
     database_encoded = SeratoData.Encode(database_decoded)
     temp_database_file = os.path.join(temp_database, 'database V2')
-    logging.info('Updating database: ' + temp_database_file)
+    logging.info(f'Updating database: {temp_database_file}')
     with open(temp_database_file, 'w+b') as new_db:
       new_db.write(database_encoded)
     """Update crates"""
@@ -190,8 +198,10 @@ class Database:
         serato_databases.append(volume_database)
     if len(serato_databases) == 1:
       return serato_databases[0]
-    else:
+    elif len(serato_databases) > 1:
       return Select.Item(serato_databases)
+    else:
+      return home_dir_database
     
   class Temp:
     def Create():
@@ -249,7 +259,7 @@ class Database:
             logging.warning(f'\n\033[93mNOPE\033[0m')
 
   def Apply(temp_database):
-    menu = str(input('\nEnter [y]es to apply changes: ').lower())
+    menu = str(input('\033[K\nEnter [y]es to apply changes: ').lower())
     if re.match('y|yes', menu.lower()):
       Database.Backup()
       logging.info(f'Moving temp database: {temp_database} to {database_folder}')
@@ -285,8 +295,8 @@ class Database:
 class Select:
   def Item(self):
     for i, item in enumerate(self):
-      print(f'  {i + 1}. {item}')
-    print(f'  {i + 1}. Use file chooser')
+      print(f'{i + 1}. {item}')
+    print(f'{i + 1}. Use file chooser')
     while True:
       selection = int(input('\nSelect an option: '))
       if selection > 0 and selection <= len(self):
@@ -294,10 +304,10 @@ class Select:
       elif selection == selection[i + 1]:
         return Select.Directory()
 
-  def Directory():
+  def Directory(self = ''):
     root = tkinter.Tk()
     root.withdraw()
-    self = filedialog.askdirectory()
+    self = filedialog.askdirectory(initialdir=self)
     root.destroy()
     return self
 
@@ -309,7 +319,7 @@ def Logger():
   console = logging.StreamHandler()
   console.setLevel(logging.INFO)
   logging.getLogger(None).addHandler(console)
-  logging.debug('\nSession start')
+  logging.debug(f'***** Session start *****')
   return log
 
 
@@ -425,7 +435,7 @@ class SeratoData:
         for item in otrk_item:
           if re.match('pfil|ptrk', item[0]) and find in item[1]:
             p_value = item[1].replace(find, replace)
-            logging.info(f'Replacing {i}: {p_value[:terminal_width]}')
+            logging.info(f'{i - 2}/{len(self) - 3} Replacing: {find[:terminal_width]}\033[K')
             otrk_data.append((item[0], p_value))
           else:
             otrk_data.append(item)
@@ -499,19 +509,24 @@ class Music:
 class Crate:
   def Sync(rebuild = False):
     temp_database = Database.Temp.Create()
-    crate_check = Crate.Check(temp_database, rebuild)
+    crate_check, songs_new, songs_mod = Crate.Check(temp_database, rebuild)
+    print(f'\033[K')
     if crate_check > 0:
-      logging.info(f'{crate_check} crate{"s" if crate_check > 1 else ""} to update\033[K')
+      logging.info(f'  \033[92m+++\033[0m {songs_new} new song{"s" if songs_new > 1 else ""} to add')
+      logging.info(f'  \033[93m~~~\033[0m {songs_mod} existing song{"s" if songs_mod > 1 else ""} moved to subcrate{"s" if songs_mod > 1 else ""}')
+      logging.info(f'      {crate_check} crate{"s" if crate_check > 1 else ""} to update')
       apply = Database.Apply(temp_database)
       if apply == True:
         logging.info(f'\033[92mSync done!\033[0m')
     elif crate_check == 0:
-      logging.info(f'\033[K\r\033[92mNo crate updates required\033[0m')
+      logging.info(f'\r\033[92mNo crate updates required\033[0m\033[K')
     time.sleep(1)
     Database.Temp.Remove(temp_database)
 
   def Check(temp_database, rebuild):
-    updates = 0
+    crate_updates = 0
+    songs_new = 0
+    songs_mod = 0
     music_subfolders = []
     for root, dirs, files in os.walk(music_folder):
       include_parent_crate = Config.Get('options', 'include_parent_crate')
@@ -530,16 +545,25 @@ class Crate:
       crate_path = os.path.join(temp_database, 'Subcrates', crate_name)
       if os.path.exists(crate_path):
         if rebuild == True:
-          logging.info(f'\033[93mRebuilding crate:\033[0m {crate_path}')
+          logging.info(f'\033[93mRebuilding crate\033[0m: {crate_path}')
           os.remove(crate_path)
-          updates += Crate.Build(crate_path, music_subfolder)
+          crate_update = Crate.Build(crate_path, music_subfolder)
+          crate_updates += crate_update[0]
+          songs_new += crate_update[1]
+          songs_mod += crate_update[2]
         else:
           logging.debug(f'\033[1F\033[KCrate exists: {crate_path}')
-          updates += Crate.Existing(crate_path, music_subfolder)
+          crate_update = Crate.Existing(crate_path, music_subfolder)
+          crate_updates += crate_update[0]
+          songs_new += crate_update[1]
+          songs_mod += crate_update[2]
       else:
         logging.info(f'Crate does not exist: {crate_path}')
-        updates += Crate.Build(crate_path, music_subfolder)
-    return updates
+        crate_update = Crate.Build(crate_path, music_subfolder)
+        crate_updates += crate_update[0]
+        songs_new += crate_update[1]
+        songs_mod += crate_update[2]
+    return crate_updates, songs_new, songs_mod
 
   def Existing(crate_path, music_subfolder):
     with open(crate_path, 'rb') as f:
@@ -553,15 +577,15 @@ class Crate:
         crate_files.append(line[1][0][1])
     crate_name = os.path.split(crate_path)[-1]
 
-    Crate.Scan(music_subfolder, crate_name, crate_data, crate_path, crate_files)
+    songs_new, songs_mod = Crate.Scan(music_subfolder, crate_name, crate_data, crate_path, crate_files)
 
     if len(crate_data) > crate_length:
       crate_encoded = SeratoData.Encode(crate_data)
       with open(crate_path, 'w+b') as new_crate:
         new_crate.write(crate_encoded)
-      return 1
+      return 1, songs_new, songs_mod
     else:
-      return 0
+      return 0, songs_new, songs_mod
 
   def Build(crate_path, music_subfolder):
     crate_name = os.path.split(crate_path)[-1]
@@ -570,14 +594,19 @@ class Crate:
     crate_data.append(('osrt', [('tvcn', 'bpm')]))
     crate_data.append(('ovct', [('tvcn', 'song')], ('ovct', [('tvcn', 'artist')]), ('ovct', [('tvcn', 'bpm')]), ('ovct', [('tvcn', 'key')]), ('ovct', [('tvcn', 'year')]), ('ovct', [('tvcn', 'added')])))
 
-    Crate.Scan(music_subfolder, crate_name, crate_data, crate_path)
+    songs_new, songs_mod = Crate.Scan(music_subfolder, crate_name, crate_data, crate_path)
 
     crate_binary = SeratoData.Encode(crate_data)
+    if not os.path.exists(crate_path):
+      logging.info(f'\033[96mBuilding new crate file\033[0m: {crate_path}')
+      os.makedirs(os.path.dirname(crate_path), exist_ok=True)
     with open(crate_path, 'w+b') as crate_file:
       crate_file.write(crate_binary)
-    return 1
+    return 1, songs_new, songs_mod
 
   def Scan(music_subfolder, crate_name, crate_data, crate_path, crate_files = []):
+    songs_new = 0
+    songs_mod = 0
     for file in sorted(os.listdir(music_subfolder)):
       if file.endswith(('.mp3', '.ogg', '.alac', '.flac', '.aif', '.wav', '.wl.mp3', '.mp4', '.m4a', '.aac')):
         if re.match('/Volumes', music_subfolder):
@@ -589,12 +618,17 @@ class Crate:
           file_full_path = '/' + file_path
         if file_path not in crate_files:
           if file_full_path in database_music:
-            file_status = 'existing'
+            file_status_color = '\033[93m'
+            file_status = f'{file_status_color}~~~\033[0m'
+            songs_mod += 1
           else:
-            file_status = 'new'
+            file_status_color = '\033[92m'
+            file_status = f'{file_status_color}+++\033[0m'
+            songs_new += 1
           crate_name_displayname = crate_name.replace('%%', u' \u2771 ')
-          logging.info(f'Adding {file_status} file {file_full_path} to {crate_name_displayname}')
+          logging.info(f'{file_status} {file_full_path} {file_status_color}\u2771\u2771\u2771\033[0m {crate_name_displayname}')
           crate_data.append(('otrk', [('ptrk', file_path)]))
+    return songs_new, songs_mod
 
 class ReplacePath:
   def Find():
@@ -663,9 +697,17 @@ if __name__ == '__main__':
     database_binary = SeratoData.Read(database)
     database_decoded = SeratoData.Decode(database_binary)
     database_music, database_music_missing = Music.Extract(database_decoded)
-    music_folder = Music.Folder(database_music)
-    while True:
-      menu_input = Menu.Print()
-      Menu.Action(menu_input)
+    if len(database_music) > 0:
+      music_folder = Music.Folder(database_music)
+      while True:
+        menu_input = Menu.Print()
+        Menu.Action(menu_input)
+    else:
+      print(f'\033[93mYou have no files in your library\033[0m')
+      time.sleep(2)
+      print('\033[93mUse the file chooser to select the directory where your music is to build subcrates from scratch\033[0m')
+      time.sleep(3)
+      music_folder = Select.Directory()
+      Crate.Sync(rebuild=True)
   else:
     print('macOS only right now')
