@@ -35,8 +35,8 @@ def Decode(self):
       value = value_binary
     output.append((key, value))
     i += 8 + length
-  # print('Decode complete', end='\033[K\r')
   return output
+
 
 def Encode(self):
   output = io.BytesIO()
@@ -67,6 +67,7 @@ def Encode(self):
     output.write(key_binary + length_binary + value_binary)
   print('Encode complete', end='\033[K\r')
   return output.getvalue()
+
 
 def Replace(self, logging, find, replace):
   output = []

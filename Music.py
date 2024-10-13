@@ -6,7 +6,6 @@ import Config
 def Extract(self, database_folder):
   database_music = []
   database_music_missing = []
-  # print()
   logging.info(f'Extracting song file locations from database\033[K')
   if re.match('/Volumes', database_folder):
     file_base = database_folder.split('_Serato_')[0]
