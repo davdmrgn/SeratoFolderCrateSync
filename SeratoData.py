@@ -1,12 +1,13 @@
 import struct, re, io, os
+import Config
 
-terminal_width = os.get_terminal_size().columns - 20
 
 def Read(self):
   print(f'Reading Serato {"crate" if self.endswith("crate") else "database"} file: {self}', end='\033[K\r')
   with open(self, 'rb') as data:
     binary = data.read()
   return binary
+
 
 def Decode(self):
   output = []
@@ -27,7 +28,7 @@ def Decode(self):
         value_str = value[0][1]
       else:
         value_str = value
-      print(f'Decoding {len(output)}: {value_str[:terminal_width]}', end='\033[K\r')
+      print(f'Decoding {len(output)}: {value_str[:Config.TerminalWidth()]}', end='\033[K\r')
     elif re.match('(?!^u|^s|^b|^r)' , key):
       value = value_binary.decode('utf-16-be')
     else:
@@ -48,9 +49,9 @@ def Encode(self):
     elif re.match('^o', key):
       o_values = line[1]
       if len(o_values) > 2:
-        print(f'Encoding {i}: {o_values[1][1][:terminal_width]}', end='\033[K\r')
+        print(f'Encoding {i}: {o_values[1][1][:Config.TerminalWidth()]}', end='\033[K\r')
       elif len(o_values) == 1:
-        print(f'Encoding {i}: {o_values[0][1][:terminal_width]}', end='\033[K\r')
+        print(f'Encoding {i}: {o_values[0][1][:Config.TerminalWidth()]}', end='\033[K\r')
       value_binary = b''
       for line in o_values:
         o_key = line[0]
@@ -77,7 +78,7 @@ def Replace(self, logging, find, replace):
       for item in otrk_item:
         if re.match('pfil|ptrk', item[0]) and find in item[1]:
           p_value = item[1].replace(find, replace)
-          logging.info(f'{i - 2}/{len(self) - 3} Replacing: {find[:terminal_width]}\033[K')
+          logging.info(f'{i - 2}/{len(self) - 3} Replacing: {find[:Config.TerminalWidth()]}\033[K')
           otrk_data.append((item[0], p_value))
         else:
           otrk_data.append(item)

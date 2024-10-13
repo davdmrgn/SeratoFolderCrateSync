@@ -3,7 +3,6 @@ import Database
 import Select
 import SeratoData
 
-terminal_width = os.get_terminal_size().columns - 20
 
 def Init(database_music_missing):
   if len(database_music_missing) == 0:
@@ -17,6 +16,7 @@ def Init(database_music_missing):
     if Updates > 0:
       Database.Apply(temp_database)
     Database.Temp.Remove(temp_database)
+
 
 def Search(temp_database, music_folder, database_music_missing, database_decoded):
   print('\033[93mUse the selector to choose the search folder\033[0m')
@@ -33,6 +33,7 @@ def Search(temp_database, music_folder, database_music_missing, database_decoded
           Updates += Found
         break
   return Updates
+
 
 def Compare(ii, temp_database, search_folder, database_decoded, database_music):
   db_entry = database_decoded[ii]

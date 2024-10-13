@@ -6,14 +6,17 @@ import Help
 import ReplacePath
 import LocateLostFiles
 
+
 def Header():
   print(f'\n╔{"═"*66}╗')
   print(f'║{" "*21}Serato Crate Folder Sync{" "*21}║')
   print(f'╚{"═"*66}╝\n')
 
+
 def Print(database_folder, database_music, database_music_missing, log, music_folder, config, database_decoded):
   Info(database_folder, database_music, database_music_missing, log)
   Options(database_folder, music_folder, database_music, database_music_missing, config, database_decoded)
+
 
 def Info(database_folder, database_music, database_music_missing, log):
   logging.info(f'Serato Database: {database_folder}\033[K')
@@ -25,6 +28,7 @@ def Info(database_folder, database_music, database_music_missing, log):
   include_parent_crate = Config.Get(database_folder, 'options', 'include_parent_crate', 'False')
   print()
   logging.info(f'Include Parent Folder as Crate: {include_parent_crate}')
+
 
 def Options(database_folder, music_folder, database_music, database_music_missing, config, database_decoded):
   print()
@@ -42,6 +46,7 @@ def Options(database_folder, music_folder, database_music, database_music_missin
   selection = str(input('\nSelect an option: ').lower())
   Action(selection, database_folder, music_folder, config, database_music, database_music_missing, database_decoded)
 
+
 def OptionsAdvanced(database_folder, database_music_missing):
   print('\nB. Backup database')
   backup_folder = os.path.join(database_folder + 'Backups')
@@ -54,6 +59,7 @@ def OptionsAdvanced(database_folder, database_music_missing):
   print('U. Update music folder path in database')
   selection = str(input('\nSelect an option: ').lower())
   return selection
+
 
 def Action(selection, database_folder, music_folder, config, database_music, database_music_missing, database_decoded):
   if selection == 'a':

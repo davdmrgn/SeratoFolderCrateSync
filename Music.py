@@ -1,7 +1,7 @@
 import os, re, logging
 import Select
+import Config
 
-terminal_width = os.get_terminal_size().columns - 20
 
 def Extract(self, database_folder):
   database_music = []
@@ -16,7 +16,7 @@ def Extract(self, database_folder):
     if line[0] == 'otrk':
       file_path = os.path.join(file_base, line[1][1][1])
       if os.path.exists(file_path):
-        print(f'Found {len(database_music) + 1}: {file_path[:terminal_width]}', end='\033[K\r')
+        print(f'Found {len(database_music) + 1}: {file_path[:Config.TerminalWidth()]}', end='\033[K\r')
         database_music.append(file_path)
       else:
         logging.warning(f'\033[93mMISSING!\033[0m {file_path}\033[K')

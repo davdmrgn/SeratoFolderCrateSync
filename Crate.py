@@ -3,7 +3,6 @@ import Database
 import Config
 import SeratoData
 
-terminal_width = os.get_terminal_size().columns - 20
 
 def Sync(database_folder, music_folder, config, database_music, rebuild = False):
   temp_database = Database.Temp.Create(database_folder)
@@ -20,6 +19,7 @@ def Sync(database_folder, music_folder, config, database_music, rebuild = False)
     logging.info(f'\r\033[92mNo crate updates required\033[0m\033[K')
   time.sleep(1)
   Database.Temp.Remove(temp_database)
+
 
 def Check(temp_database, rebuild, music_folder, config, database_folder, database_music):
   crate_updates = 0
@@ -63,6 +63,7 @@ def Check(temp_database, rebuild, music_folder, config, database_folder, databas
       songs_mod += crate_update[2]
   return crate_updates, songs_new, songs_mod
 
+
 def Existing(crate_path, music_subfolder, database_music):
   with open(crate_path, 'rb') as f:
     crate_binary = f.read()
@@ -85,6 +86,7 @@ def Existing(crate_path, music_subfolder, database_music):
   else:
     return 0, songs_new, songs_mod
 
+
 def Build(crate_path, music_subfolder, database_music):
   crate_name = os.path.split(crate_path)[-1]
   crate_data = []
@@ -101,6 +103,7 @@ def Build(crate_path, music_subfolder, database_music):
   with open(crate_path, 'w+b') as crate_file:
     crate_file.write(crate_binary)
   return 1, songs_new, songs_mod
+
 
 def Scan(database_music, music_subfolder, crate_name, crate_data, crate_path, crate_files = []):
   songs_new = 0

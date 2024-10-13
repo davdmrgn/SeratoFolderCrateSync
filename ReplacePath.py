@@ -2,7 +2,6 @@ import logging, time, os, re
 import Database
 import SeratoData
 
-terminal_width = os.get_terminal_size().columns - 20
 
 def Find(music_folder):
   logging.info(f'\n\n Music folder is: {music_folder}')
@@ -15,6 +14,7 @@ def Find(music_folder):
       logging.warning('Nope')
       time.sleep(1)
     break
+
 
 def Replace(find, replace, database_decoded):
   temp_database = Database.Temp.Create()
