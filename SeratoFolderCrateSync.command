@@ -16,6 +16,8 @@ def main():
   if args.verbose:
     print("Verbose mode enabled")
     eyed3.log.setLevel("DEBUG")
+  else:
+    eyed3.log.setLevel('ERROR')
   database = Database.Find()
   database_folder = os.path.dirname(database)
   log = Logger.Logger(database_folder)
