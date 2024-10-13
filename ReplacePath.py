@@ -1,5 +1,4 @@
 import logging, time, os, re
-import ReplacePath
 import Database
 import SeratoData
 
@@ -11,7 +10,7 @@ def Find(music_folder):
     find = str(input('\n Enter the portion of the path to replace: '))
     if len(find) > 1 and re.search(find, music_folder):
       replace = str(input(' Enter the new replacement portion: '))
-      ReplacePath.Replace(find, replace)
+      Replace(find, replace)
     else:
       logging.warning('Nope')
       time.sleep(1)
