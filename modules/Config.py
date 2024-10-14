@@ -1,4 +1,4 @@
-import os, configparser, logging
+import os, sys, configparser, logging
 
 
 def TerminalWidth():
@@ -8,7 +8,7 @@ def TerminalWidth():
 
 def File(data):
   """Save configuration file inside Serato Logs dir"""
-  config_filename = f'{os.path.splitext(os.path.basename(__file__))[0]}.ini'
+  config_filename = f'{os.path.splitext(os.path.basename(sys.argv[0]))[0]}.ini'
   config_path = os.path.join(data['db_path'], 'Logs', config_filename)
   data['config_path'] = config_path
   return data
