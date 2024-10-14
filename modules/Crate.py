@@ -1,7 +1,5 @@
 import time, logging, os, re
 from modules import Database, Config, SeratoData
-# import Config
-# import SeratoData
 
 
 def Sync(data, rebuild = False):

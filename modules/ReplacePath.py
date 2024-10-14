@@ -1,7 +1,5 @@
 import logging, time, os, re
 from modules import Database, SeratoData, LocateLostFiles
-# import SeratoData
-# import LocateLostFiles
 
 
 def Find(music_path):

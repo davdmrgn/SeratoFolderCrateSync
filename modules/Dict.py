@@ -1,9 +1,5 @@
 import os
 from modules import Database, Logger, Config, SeratoData, Music
-# import Logger
-# import Config
-# import SeratoData
-# import Music
 
 
 def Build():

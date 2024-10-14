@@ -1,8 +1,5 @@
 import time, logging, os, eyed3, re
 from modules import Database, Select, SeratoData, Config
-# import Select
-# import SeratoData
-# import Config
 
 
 def Init(data):

@@ -1,10 +1,5 @@
 import os, sys, logging, time
 from modules import Config, Database, Crate, Help, ReplacePath, LocateLostFiles
-# import Database
-# import Crate
-# import Help
-# import ReplacePath
-# import LocateLostFiles
 
 
 def Header():
