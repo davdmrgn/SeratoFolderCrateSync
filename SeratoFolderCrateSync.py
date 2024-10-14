@@ -1,9 +1,5 @@
 import os, argparse, eyed3, time
 from modules import Dict, Music, Menu, Select, Crate
-# from modules import Music
-# from modules import Menu
-# from modules import Select
-# from modules import Crate
 
 
 def main():
