@@ -4,6 +4,7 @@ import Config
 
 
 def Extract(self, database_folder):
+  """Extract song file locations from database"""
   database_music = []
   database_music_missing = []
   logging.info(f'Extracting song file locations from database\033[K')
@@ -47,7 +48,7 @@ def Folder(self, database_folder):
         if len(dirs) > 1 and re.findall(root, str(file_folders)):
           logging.debug(f'Found music directory {root} with {len(dirs)} subdirectories')
           folder_names.update({root: len(dirs)})
-
+  
     """Sort the counts"""
     folder_names = dict(sorted(folder_names.items(), key=lambda item: item[1], reverse=True))
     logging.debug(f'Found paths: {folder_names}')

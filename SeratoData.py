@@ -3,6 +3,7 @@ import Config
 
 
 def Read(self):
+  """Open database file and return the binary data"""
   print(f'Reading Serato {"crate" if self.endswith("crate") else "database"} file: {self}', end='\033[K\r')
   with open(self, 'rb') as data:
     binary = data.read()
@@ -10,6 +11,7 @@ def Read(self):
 
 
 def Decode(self):
+  """Decode binary files to human readable format"""
   output = []
   i = 0
   while i < len(self):
@@ -39,6 +41,7 @@ def Decode(self):
 
 
 def Encode(self):
+  """Convert human readable database to binary"""
   output = io.BytesIO()
   for i, line in enumerate(self):
     key = line[0]
@@ -67,23 +70,3 @@ def Encode(self):
     output.write(key_binary + length_binary + value_binary)
   print('Encode complete', end='\033[K\r')
   return output.getvalue()
-
-
-def Replace(self, logging, find, replace):
-  output = []
-  for i, item in enumerate(self):
-    key = item[0]
-    if key == 'otrk':
-      otrk_data = []
-      otrk_item = item[1]
-      for item in otrk_item:
-        if re.match('pfil|ptrk', item[0]) and find in item[1]:
-          p_value = item[1].replace(find, replace)
-          logging.info(f'{i - 2}/{len(self) - 3} Replacing: {find[:Config.TerminalWidth()]}\033[K')
-          otrk_data.append((item[0], p_value))
-        else:
-          otrk_data.append(item)
-      output.append((key, otrk_data))
-    else:
-      output.append(item)
-  return output

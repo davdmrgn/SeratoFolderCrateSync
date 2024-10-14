@@ -1,10 +1,12 @@
-import time, logging, os, eyed3
+import time, logging, os, eyed3, re
 import Database
 import Select
 import SeratoData
+import Config
 
 
 def Init(database_music_missing):
+  """Entrypoint for missing files"""
   if len(database_music_missing) == 0:
     logging.info('\n\033[92mYou have no missing files in your library\033[0m')
   else:
@@ -19,6 +21,7 @@ def Init(database_music_missing):
 
 
 def Search(temp_database, music_folder, database_music_missing, database_decoded):
+  """Search for files missing in database"""
   print('\033[93mUse the selector to choose the search folder\033[0m')
   time.sleep(2)
   Updates = 0
@@ -36,6 +39,7 @@ def Search(temp_database, music_folder, database_music_missing, database_decoded
 
 
 def Compare(ii, temp_database, search_folder, database_decoded, database_music):
+  """Compare ID3 tag against database data"""
   db_entry = database_decoded[ii]
   db_entry_filetype = db_entry[1][0][1]
   db_entry_filepath = db_entry[1][1][1]
@@ -62,6 +66,27 @@ def Compare(ii, temp_database, search_folder, database_decoded, database_music):
             logging.error(f'\nProblem reading ID3 tag: {file_fullpath}')
 
 
+def Replace(self, logging, find, replace):
+  """Replace content in database"""
+  output = []
+  for i, item in enumerate(self):
+    key = item[0]
+    if key == 'otrk':
+      otrk_data = []
+      otrk_item = item[1]
+      for item in otrk_item:
+        if re.match('pfil|ptrk', item[0]) and find in item[1]:
+          p_value = item[1].replace(find, replace)
+          logging.info(f'{i - 2}/{len(self) - 3} Replacing: {find[:Config.TerminalWidth()]}\033[K')
+          otrk_data.append((item[0], p_value))
+        else:
+          otrk_data.append(item)
+      output.append((key, otrk_data))
+    else:
+      output.append(item)
+  return output
+
+
 def Update(db_index, id3, temp_database, database_decoded):
   """Update database"""
   old_pfil = database_decoded[db_index][1][1][1]
@@ -85,7 +110,7 @@ def Update(db_index, id3, temp_database, database_decoded):
         crate_decoded = SeratoData.Decode(crate_binary)
         for line in crate_decoded:
           if old_pfil in str(line[1][0]):
-            crate_replaced = SeratoData.Replace(crate_decoded, old_pfil, id3.path[1:])
+            crate_replaced = Replace(crate_decoded, old_pfil, id3.path[1:])
             crate_replaced_encoded = SeratoData.Encode(crate_replaced)
             logging.info(f'Updating {"Smart" if crate_file.endswith(".scrate") else ""}Crate: ' + crate_fullpath)
             with open(crate_fullpath, 'w+b') as new_data:

@@ -4,6 +4,7 @@ import Select
 
 
 def Find():
+  """Find/Select Serato databases"""
   serato_databases = []
   """/Users dir"""
   home_dir = os.path.expanduser('~')
@@ -27,6 +28,7 @@ def Find():
 
 class Temp:
   def Create(database_folder):
+    """Copy database and work against a temporary copy"""
     self = database_folder + 'Temp'
     logging.debug(f'\033[96mCreate temporary database\033[0m: {self}')
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*', 'DJ.INFO')
@@ -35,12 +37,14 @@ class Temp:
     return self
 
   def Remove(self):
+    """Clean up temp database"""
     if os.path.exists(self):
       logging.info(f'\033[96mRemoving temporary database\033[0m: {self}')
       shutil.rmtree(self)
 
 
 def Backup(database_folder):
+  """Back up database"""
   backup_folder = database_folder + 'Backups'
   backup_folder_now = f'{backup_folder}/_Serato_{datetime.now().strftime("%Y%m%d-%H%M%S")}'
   print()
@@ -51,6 +55,7 @@ def Backup(database_folder):
 
 
 def Restore(database_folder):
+  """Restore backup from database"""
   backup_folder = database_folder + 'Backups'
   if not os.path.exists(backup_folder):
     logging.error(f'\033[93mBackup folder not found\033[0m')
@@ -84,6 +89,7 @@ def Restore(database_folder):
 
 
 def Apply(temp_database, database_folder):
+  """Apply changes"""
   menu = str(input('\033[K\nEnter [y]es to apply changes: ').lower())
   if re.match('y|yes', menu.lower()):
     Backup(database_folder)
@@ -97,6 +103,7 @@ def Apply(temp_database, database_folder):
 
 
 def CheckTags(database_folder, database_decoded):
+  """Check ID3 tags against Serato database"""
   if re.match('/Volumes', database_folder):
     file_base = database_folder.split('_Serato_')[0]
   else:

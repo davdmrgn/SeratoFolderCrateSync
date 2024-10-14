@@ -5,6 +5,7 @@ import SeratoData
 
 
 def Sync(database_folder, music_folder, config, database_music, rebuild = False):
+  """Check for updates and apply if changes needed"""
   temp_database = Database.Temp.Create(database_folder)
   crate_check, songs_new, songs_mod = Check(temp_database, rebuild, music_folder, config, database_folder, database_music)
   print(f'\033[K')
@@ -22,6 +23,7 @@ def Sync(database_folder, music_folder, config, database_music, rebuild = False)
 
 
 def Check(temp_database, rebuild, music_folder, config, database_folder, database_music):
+  """Check database against files and folders"""
   crate_updates = 0
   songs_new = 0
   songs_mod = 0
@@ -65,6 +67,7 @@ def Check(temp_database, rebuild, music_folder, config, database_folder, databas
 
 
 def Existing(crate_path, music_subfolder, database_music):
+  """Existing crate"""
   with open(crate_path, 'rb') as f:
     crate_binary = f.read()
   crate_data = SeratoData.Decode(crate_binary)
@@ -75,9 +78,9 @@ def Existing(crate_path, music_subfolder, database_music):
     if key == 'otrk':
       crate_files.append(line[1][0][1])
   crate_name = os.path.split(crate_path)[-1]
-
+  
   songs_new, songs_mod = Scan(database_music, music_subfolder, crate_name, crate_data, crate_path, crate_files)
-
+  
   if len(crate_data) > crate_length:
     crate_encoded = SeratoData.Encode(crate_data)
     with open(crate_path, 'w+b') as new_crate:
@@ -88,6 +91,7 @@ def Existing(crate_path, music_subfolder, database_music):
 
 
 def Build(crate_path, music_subfolder, database_music):
+  """Build new crate"""
   crate_name = os.path.split(crate_path)[-1]
   crate_data = []
   crate_data.append(('vrsn', '1.0/Serato ScratchLive Crate'))
@@ -95,7 +99,7 @@ def Build(crate_path, music_subfolder, database_music):
   crate_data.append(('ovct', [('tvcn', 'song')], ('ovct', [('tvcn', 'artist')]), ('ovct', [('tvcn', 'bpm')]), ('ovct', [('tvcn', 'key')]), ('ovct', [('tvcn', 'year')]), ('ovct', [('tvcn', 'added')])))
 
   songs_new, songs_mod = Scan(database_music, music_subfolder, crate_name, crate_data, crate_path)
-
+  
   crate_binary = SeratoData.Encode(crate_data)
   if not os.path.exists(crate_path):
     logging.info(f'\033[96mBuilding new crate file\033[0m: {crate_path}')
@@ -106,6 +110,7 @@ def Build(crate_path, music_subfolder, database_music):
 
 
 def Scan(database_music, music_subfolder, crate_name, crate_data, crate_path, crate_files = []):
+  """Scan folders for music files"""
   songs_new = 0
   songs_mod = 0
   for file in sorted(os.listdir(music_subfolder)):

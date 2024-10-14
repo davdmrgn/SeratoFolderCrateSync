@@ -1,9 +1,11 @@
 import logging, time, os, re
 import Database
 import SeratoData
+import LocateLostFiles
 
 
 def Find(music_folder):
+  """Find folder path for music"""
   logging.info(f'\n\n Music folder is: {music_folder}')
   while True:
     find = str(input('\n Enter the portion of the path to replace: '))
@@ -17,9 +19,10 @@ def Find(music_folder):
 
 
 def Replace(find, replace, database_decoded):
+  """Find and replace folder path for music"""
   temp_database = Database.Temp.Create()
   """Database"""
-  database_replaced = SeratoData.Replace(database_decoded, find, replace)
+  database_replaced = LocateLostFiles.Replace(database_decoded, find, replace)
   database_replaced_encoded = SeratoData.Encode(database_replaced)
   temp_database_file = os.path.join(temp_database, 'database V2')
   logging.info('Updating database: ' + temp_database_file)
@@ -34,7 +37,7 @@ def Replace(find, replace, database_decoded):
         logging.debug(f'Scanning {"Smart" if crate_file.endswith(".scrate") else ""}Crate: {crate_fullpath_displayname}')
         crate_binary = SeratoData.Read(crate_fullpath)
         crate_decoded = SeratoData.Decode(crate_binary)
-        crate_replaced = SeratoData.Replace(crate_decoded, find, replace)
+        crate_replaced = LocateLostFiles.Replace(crate_decoded, find, replace)
         crate_replaced_encoded = SeratoData.Encode(crate_replaced)
         logging.debug('Updating Crate: ' + crate_fullpath)
         with open(crate_fullpath, 'w+b') as new_data:
