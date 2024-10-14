@@ -13,24 +13,34 @@ def Header():
   print(f'╚{"═"*66}╝\n')
 
 
-def Print(database_folder, database_music, database_music_missing, log, music_folder, config, database_decoded):
-  Info(database_folder, database_music, database_music_missing, log)
-  Options(database_folder, music_folder, database_music, database_music_missing, config, database_decoded)
+def Print(database):
+  Info(database)
+  Options(database)
 
 
-def Info(database_folder, database_music, database_music_missing, log):
+def Info(database):
+  database_folder = database['folder']
+  database_music = database['music']
+  database_music_missing = database['missing']
+  log = database['log']
   logging.info(f'Serato Database: {database_folder}\033[K')
-  logging.info(f'Configuration File: {Config.File(database_folder)}')
+  logging.info(f'Configuration File: {database['config_path']}')
   logging.info(f'Log File: {log}')
   print()
   logging.info(f'Database Files: {len(database_music)}')
   logging.info(f'Missing Files:  {len(database_music_missing)}')
-  include_parent_crate = Config.Get(database_folder, 'options', 'include_parent_crate', 'False')
+  include_parent_crate = Config.Get(database, 'options', 'include_parent_crate', 'False')
   print()
   logging.info(f'Include Parent Folder as Crate: {include_parent_crate}')
 
 
-def Options(database_folder, music_folder, database_music, database_music_missing, config, database_decoded):
+def Options(database):
+  database_folder = database['folder']
+  music_folder = database['music_folder']
+  database_music = database['music']
+  database_music_missing = database['missing']
+  config = database['config']
+  database_decoded = database['decoded']
   print()
   if database_folder and music_folder and not len(database_music) > len(database_music_missing):
     logging.error(f'\033[91mMore files are missing than exists!?!?!??\033[0m\n')
@@ -44,10 +54,12 @@ def Options(database_folder, music_folder, database_music, database_music_missin
   print(f'H. Help')
   print(f'\nQ. Quit')
   selection = str(input('\nSelect an option: ').lower())
-  Action(selection, database_folder, music_folder, config, database_music, database_music_missing, database_decoded)
+  Action(selection, database)
 
 
-def OptionsAdvanced(database_folder, database_music_missing):
+def OptionsAdvanced(database):
+  database_folder = database['folder']
+  database_music_missing = database['missing']
   print('\nB. Backup database')
   backup_folder = os.path.join(database_folder + 'Backups')
   if os.path.exists(backup_folder):
@@ -61,19 +73,25 @@ def OptionsAdvanced(database_folder, database_music_missing):
   return selection
 
 
-def Action(selection, database_folder, music_folder, config, database_music, database_music_missing, database_decoded):
+def Action(selection, database):
+  database_folder = database['folder']
+  music_folder = database['music_folder']
+  config = database['config']
+  database_music = database['music']
+  database_music_missing = database['missing']
+  database_decoded = database['decoded']
   if selection == 'a':
-    selection = OptionsAdvanced(database_folder, database_music_missing)
+    selection = OptionsAdvanced(database)
     if selection == 'b':
-      Database.Backup(database_folder)
+      Database.Backup(database)
     elif selection == 'r':
-      Database.Restore(database_folder)
+      Database.Restore(database)
       sys.exit(0)
     elif selection == 'x':
-      Crate.Sync(database_folder, music_folder, config, database_music, rebuild = True)
+      Crate.Sync(database, rebuild = True)
       sys.exit(0)
     elif selection == 't':
-      Database.CheckTags(database_folder, database_decoded)
+      Database.CheckTags(database)
     elif selection == 'u':
       ReplacePath.Find()
       sys.exit(0)
@@ -84,10 +102,10 @@ def Action(selection, database_folder, music_folder, config, database_music, dat
       ReplacePath.Find()
       sys.exit(0)
   elif selection == 's':
-    Crate.Sync(database_folder, music_folder, config, database_music)
+    Crate.Sync(database)
     sys.exit(0)
   elif selection == 'p':
-    Config.ToggleOption(database_folder, config, 'options', 'include_parent_crate')
+    Config.ToggleOption(database, 'options', 'include_parent_crate')
   elif selection == 'h':
     Help.Print()
   elif selection == 'q':

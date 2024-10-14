@@ -4,16 +4,21 @@ import Config
 import SeratoData
 
 
-def Sync(database_folder, music_folder, config, database_music, rebuild = False):
+def Sync(database, rebuild = False):
   """Check for updates and apply if changes needed"""
-  temp_database = Database.Temp.Create(database_folder)
-  crate_check, songs_new, songs_mod = Check(temp_database, rebuild, music_folder, config, database_folder, database_music)
+  database_folder = database['location']
+  music_folder = database['music_folder']
+  config = database['config']
+  database_music = database['music']
+  temp_database = Database.Temp.Create(database)
+  database.update({'temp': temp_database})
+  crate_check, songs_new, songs_mod = Check(database, rebuild)
   print(f'\033[K')
   if crate_check > 0:
     logging.info(f'  \033[92m+++\033[0m {songs_new} new song{"s" if songs_new > 1 else ""} to add')
     logging.info(f'  \033[93m~~~\033[0m {songs_mod} existing song{"s" if songs_mod > 1 else ""} move into subcrate{"s" if songs_mod > 1 else ""}')
     logging.info(f'      {crate_check} crate{"s" if crate_check > 1 else ""} to update')
-    apply = Database.Apply(temp_database, database_folder)
+    apply = Database.Apply(database)
     if apply == True:
       logging.info(f'\033[92mSync done!\033[0m')
   elif crate_check == 0:
@@ -22,14 +27,19 @@ def Sync(database_folder, music_folder, config, database_music, rebuild = False)
   Database.Temp.Remove(temp_database)
 
 
-def Check(temp_database, rebuild, music_folder, config, database_folder, database_music):
+def Check(database, rebuild):
+  temp_database = database['temp']
+  music_folder = database['music_folder']
+  config = database['config']
+  database_folder = database['folder']
+  database_music = database['music']
   """Check database against files and folders"""
   crate_updates = 0
   songs_new = 0
   songs_mod = 0
   music_subfolders = []
   for root, dirs, files in os.walk(music_folder):
-    include_parent_crate = Config.Get(database_folder, 'options', 'include_parent_crate')
+    include_parent_crate = Config.Get(database, 'options', 'include_parent_crate')
     if include_parent_crate == 'True':
       music_subfolders.append(root)
     else:
@@ -47,13 +57,13 @@ def Check(temp_database, rebuild, music_folder, config, database_folder, databas
       if rebuild == True:
         logging.info(f'\033[93mRebuilding crate\033[0m: {crate_path}')
         os.remove(crate_path)
-        crate_update = Build(crate_path, music_subfolder, database_music)
+        crate_update = Build(database, crate_path, music_subfolder)
         crate_updates += crate_update[0]
         songs_new += crate_update[1]
         songs_mod += crate_update[2]
       else:
         logging.debug(f'\033[1F\033[KCrate exists: {crate_path}')
-        crate_update = Existing(crate_path, music_subfolder, database_music)
+        crate_update = Existing(database, crate_path, music_subfolder)
         crate_updates += crate_update[0]
         songs_new += crate_update[1]
         songs_mod += crate_update[2]
@@ -66,7 +76,8 @@ def Check(temp_database, rebuild, music_folder, config, database_folder, databas
   return crate_updates, songs_new, songs_mod
 
 
-def Existing(crate_path, music_subfolder, database_music):
+def Existing(database, crate_path, music_subfolder):
+  database_music = database['music']
   """Existing crate"""
   with open(crate_path, 'rb') as f:
     crate_binary = f.read()
@@ -79,7 +90,7 @@ def Existing(crate_path, music_subfolder, database_music):
       crate_files.append(line[1][0][1])
   crate_name = os.path.split(crate_path)[-1]
   
-  songs_new, songs_mod = Scan(database_music, music_subfolder, crate_name, crate_data, crate_path, crate_files)
+  songs_new, songs_mod = Scan(database, music_subfolder, crate_name, crate_data, crate_path, crate_files)
   
   if len(crate_data) > crate_length:
     crate_encoded = SeratoData.Encode(crate_data)
@@ -90,7 +101,8 @@ def Existing(crate_path, music_subfolder, database_music):
     return 0, songs_new, songs_mod
 
 
-def Build(crate_path, music_subfolder, database_music):
+def Build(database, crate_path, music_subfolder):
+  database_music = database['music']
   """Build new crate"""
   crate_name = os.path.split(crate_path)[-1]
   crate_data = []
@@ -98,7 +110,7 @@ def Build(crate_path, music_subfolder, database_music):
   crate_data.append(('osrt', [('tvcn', 'bpm')]))
   crate_data.append(('ovct', [('tvcn', 'song')], ('ovct', [('tvcn', 'artist')]), ('ovct', [('tvcn', 'bpm')]), ('ovct', [('tvcn', 'key')]), ('ovct', [('tvcn', 'year')]), ('ovct', [('tvcn', 'added')])))
 
-  songs_new, songs_mod = Scan(database_music, music_subfolder, crate_name, crate_data, crate_path)
+  songs_new, songs_mod = Scan(database, music_subfolder, crate_name, crate_data, crate_path)
   
   crate_binary = SeratoData.Encode(crate_data)
   if not os.path.exists(crate_path):
@@ -109,7 +121,8 @@ def Build(crate_path, music_subfolder, database_music):
   return 1, songs_new, songs_mod
 
 
-def Scan(database_music, music_subfolder, crate_name, crate_data, crate_path, crate_files = []):
+def Scan(database, music_subfolder, crate_name, crate_data, crate_path, crate_files = []):
+  database_music = database['music']
   """Scan folders for music files"""
   songs_new = 0
   songs_mod = 0

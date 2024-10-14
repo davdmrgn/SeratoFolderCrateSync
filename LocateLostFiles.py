@@ -5,7 +5,8 @@ import SeratoData
 import Config
 
 
-def Init(database_music_missing):
+def Init(database):
+  database_music_missing = database['missing']
   """Entrypoint for missing files"""
   if len(database_music_missing) == 0:
     logging.info('\n\033[92mYou have no missing files in your library\033[0m')
@@ -16,11 +17,15 @@ def Init(database_music_missing):
     logging.info(f'\033[93m  {Updates} files found\033[0m\033[K')
     time.sleep(1)
     if Updates > 0:
-      Database.Apply(temp_database)
+      Database.Apply(database)
     Database.Temp.Remove(temp_database)
 
 
-def Search(temp_database, music_folder, database_music_missing, database_decoded):
+def Search(database):
+  temp_database = database['temp']
+  music_folder = database['music_folder']
+  database_music_missing = database['missing']
+  database_decoded = database['decoded']
   """Search for files missing in database"""
   print('\033[93mUse the selector to choose the search folder\033[0m')
   time.sleep(2)
@@ -31,14 +36,17 @@ def Search(temp_database, music_folder, database_music_missing, database_decoded
     for ii, db_entry in enumerate(database_decoded[1:]):
       if item[1:] == db_entry[1][1][1]:
         logging.debug(f'{i + 1}/{len(database_music_missing)} Missing song location found in database: [{ii + 1}] {item}')
-        Found = Compare(ii + 1, temp_database, search_folder)
+        Found = Compare(database, ii + 1, search_folder)
         if type(Found) is int:
           Updates += Found
         break
   return Updates
 
 
-def Compare(ii, temp_database, search_folder, database_decoded, database_music):
+def Compare(database, ii, search_folder):
+  temp_database = database['temp']
+  database_decoded = database['decoded']
+  database_music = database['music']
   """Compare ID3 tag against database data"""
   db_entry = database_decoded[ii]
   db_entry_filetype = db_entry[1][0][1]

@@ -27,7 +27,8 @@ def Find():
 
 
 class Temp:
-  def Create(database_folder):
+  def Create(database):
+    database_folder = database['folder']
     """Copy database and work against a temporary copy"""
     self = database_folder + 'Temp'
     logging.debug(f'\033[96mCreate temporary database\033[0m: {self}')
@@ -43,7 +44,8 @@ class Temp:
       shutil.rmtree(self)
 
 
-def Backup(database_folder):
+def Backup(database):
+  database_folder = database['folder']
   """Back up database"""
   backup_folder = database_folder + 'Backups'
   backup_folder_now = f'{backup_folder}/_Serato_{datetime.now().strftime("%Y%m%d-%H%M%S")}'
@@ -54,7 +56,8 @@ def Backup(database_folder):
   logging.info(f'\033[92mBackup done!\033[0m')
 
 
-def Restore(database_folder):
+def Restore(database):
+  database_folder = database['folder']
   """Restore backup from database"""
   backup_folder = database_folder + 'Backups'
   if not os.path.exists(backup_folder):
@@ -88,11 +91,13 @@ def Restore(database_folder):
           logging.warning(f'\n\033[93mNOPE\033[0m')
 
 
-def Apply(temp_database, database_folder):
+def Apply(database):
+  temp_database = database['temp']
+  database_folder = database['folder']
   """Apply changes"""
   menu = str(input('\033[K\nEnter [y]es to apply changes: ').lower())
   if re.match('y|yes', menu.lower()):
-    Backup(database_folder)
+    Backup(database)
     logging.info(f'Moving temp database: {temp_database} to {database_folder}')
     copy_ignore = shutil.ignore_patterns('DJ.INFO')
     shutil.copytree(temp_database, database_folder, dirs_exist_ok=True, symlinks=True, ignore=copy_ignore)
@@ -102,7 +107,9 @@ def Apply(temp_database, database_folder):
     return False
 
 
-def CheckTags(database_folder, database_decoded):
+def CheckTags(database):
+  database_folder = database['folder']
+  database_decoded = database['decoded']
   """Check ID3 tags against Serato database"""
   if re.match('/Volumes', database_folder):
     file_base = database_folder.split('_Serato_')[0]

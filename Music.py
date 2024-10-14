@@ -3,7 +3,9 @@ import Select
 import Config
 
 
-def Extract(self, database_folder):
+def Extract(database):
+  self = database['decoded']
+  database_folder = database['folder']
   """Extract song file locations from database"""
   database_music = []
   database_music_missing = []
@@ -22,10 +24,14 @@ def Extract(self, database_folder):
         logging.warning(f'\033[93mMISSING!\033[0m {file_path}\033[K')
         database_music.append(file_path)
         database_music_missing.append(file_path)
-  return database_music, database_music_missing
+  database.update({'music': database_music})
+  database.update({'missing': database_music_missing})
+  return database
 
 
-def Folder(self, database_folder):
+def Folder(database):
+  self = database['music']
+  database_folder = database['folder']
   """Get all folders from files in database"""
   print('Finding music folder from files in database\033[K')
   file_folders = set()
@@ -39,7 +45,8 @@ def Folder(self, database_folder):
   commonpath = os.path.commonpath(file_folders)
   if commonpath in file_folders and len(re.findall(commonpath, str(file_folders))) == len(file_folders):
     logging.info(f'Music location: {commonpath}')
-    return commonpath
+    database.update({'music_folder': commonpath})
+    return database
   else:
     """Search the parent of all folders and match to previous list"""
     folder_names = {}
@@ -59,6 +66,8 @@ def Folder(self, database_folder):
 
     if folder_check[0] == os.path.commonpath(folder_check):
       logging.debug(f'Music location found: {folder_check[0]}')
-      return list(folder_names)[0]
+      database.update({'music_folder': list(folder_names)[0]})
+      return database
     else:
-      return Select.Item(folder_names)
+      database.update({'music_folder': Select.Item(folder_names)})
+      return database
