@@ -1,5 +1,5 @@
 import struct, re, io, os
-import Config
+from modules import Config
 
 
 def Read(self):

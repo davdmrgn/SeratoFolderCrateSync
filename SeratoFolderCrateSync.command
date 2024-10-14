@@ -1,9 +1,9 @@
 import os, argparse, eyed3, time
-import Config
-import Music
-import Menu
-import Select
-import Crate
+from modules import Dict, Music, Menu, Select, Crate
+# from modules import Music
+# from modules import Menu
+# from modules import Select
+# from modules import Crate
 
 
 def main():
@@ -15,19 +15,19 @@ def main():
     eyed3.log.setLevel("DEBUG")
   else:
     eyed3.log.setLevel('ERROR')
-  database = Config.Dict()
-  if len(database['music']) > 0:
-    Music.Folder(database)
+  data = Dict.Build()
+  if len(data['db_music']) > 0:
+    Music.Folder(data)
     while True:
-      menu_input = Menu.Print(database)
-      Menu.Action(menu_input, database)
+      menu_input = Menu.Print(data)
+      Menu.Action(menu_input, data)
   else:
     print(f'\033[93mYou have no files in your library\033[0m')
     time.sleep(2)
     print('\033[93mUse the file chooser to select the directory where your music is to build subcrates from scratch\033[0m')
     time.sleep(3)
-    database.update({'music_folder': Select.Directory()})
-    Crate.Sync(database, rebuild = True)
+    data['music_path'] = Select.Directory()
+    Crate.Sync(data, rebuild = True)
 
 
 if __name__ == "__main__":

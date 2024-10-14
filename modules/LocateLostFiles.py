@@ -1,12 +1,12 @@
 import time, logging, os, eyed3, re
-import Database
-import Select
-import SeratoData
-import Config
+from modules import Database, Select, SeratoData, Config
+# import Select
+# import SeratoData
+# import Config
 
 
-def Init(database):
-  database_music_missing = database['missing']
+def Init(data):
+  database_music_missing = data['db_music_missing']
   """Entrypoint for missing files"""
   if len(database_music_missing) == 0:
     logging.info('\n\033[92mYou have no missing files in your library\033[0m')
@@ -17,35 +17,35 @@ def Init(database):
     logging.info(f'\033[93m  {Updates} files found\033[0m\033[K')
     time.sleep(1)
     if Updates > 0:
-      Database.Apply(database)
+      Database.Apply(data)
     Database.Temp.Remove(temp_database)
 
 
-def Search(database):
-  music_folder = database['music_folder']
-  database_music_missing = database['missing']
-  database_decoded = database['decoded']
+def Search(data):
+  music_path = data['music_path']
+  database_music_missing = data['db_music_missing']
+  database_decoded = data['db_decoded']
   """Search for files missing in database"""
   print('\033[93mUse the selector to choose the search folder\033[0m')
   time.sleep(2)
   Updates = 0
-  search_folder = Select.Directory(music_folder)
+  search_path = Select.Directory(music_path)
   for i, item in enumerate(database_music_missing):
     logging.debug(f'{i + 1}/{len(database_music_missing)} Searching for missing song: {item}')
     for ii, db_entry in enumerate(database_decoded[1:]):
       if item[1:] == db_entry[1][1][1]:
         logging.debug(f'{i + 1}/{len(database_music_missing)} Missing song location found in database: [{ii + 1}] {item}')
-        Found = Compare(database, ii + 1, search_folder)
+        Found = Compare(data, ii + 1, search_path)
         if type(Found) is int:
           Updates += Found
         break
   return Updates
 
 
-def Compare(database, ii, search_folder):
-  temp_database = database['temp']
-  database_decoded = database['decoded']
-  database_music = database['music']
+def Compare(data, ii, search_path):
+  temp_database = data['db_temp']
+  database_decoded = data['db_decoded']
+  database_music = data['db_music']
   """Compare ID3 tag against database data"""
   db_entry = database_decoded[ii]
   db_entry_filetype = db_entry[1][0][1]
@@ -54,7 +54,7 @@ def Compare(database, ii, search_folder):
   db_entry_title = db_entry[1][2][1]
   db_entry_artist = db_entry[1][3][1]
   logging.info(f'\033[96mSearching for missing song\033[0m: {db_entry_filepath}')
-  for root, dirs, files in os.walk(search_folder):
+  for root, dirs, files in os.walk(search_path):
     for file in files:
       if file.endswith(db_entry_filetype):
         file_fullpath = os.path.join(root, file)

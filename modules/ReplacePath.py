@@ -1,15 +1,15 @@
 import logging, time, os, re
-import Database
-import SeratoData
-import LocateLostFiles
+from modules import Database, SeratoData, LocateLostFiles
+# import SeratoData
+# import LocateLostFiles
 
 
-def Find(music_folder):
+def Find(music_path):
   """Find folder path for music"""
-  logging.info(f'\n\n Music folder is: {music_folder}')
+  logging.info(f'\n\n Music folder is: {music_path}')
   while True:
     find = str(input('\n Enter the portion of the path to replace: '))
-    if len(find) > 1 and re.search(find, music_folder):
+    if len(find) > 1 and re.search(find, music_path):
       replace = str(input(' Enter the new replacement portion: '))
       Replace(find, replace)
     else:

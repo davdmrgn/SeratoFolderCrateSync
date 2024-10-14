@@ -1,20 +1,18 @@
 import os, re, logging
-import Select
-import Config
+from modules import Select, Config
 
 
-def Extract(database):
-  self = database['decoded']
-  database_folder = database['folder']
+def Extract(data):
+  db_path = data['db_path']
   """Extract song file locations from database"""
   database_music = []
   database_music_missing = []
   logging.info(f'Extracting song file locations from database\033[K')
-  if re.match('/Volumes', database_folder):
-    file_base = database_folder.split('_Serato_')[0]
+  if re.match('/Volumes', db_path):
+    file_base = db_path.split('_Serato_')[0]
   else:
     file_base = '/'
-  for line in self:
+  for line in data['db_decoded']:
     if line[0] == 'otrk':
       file_path = os.path.join(file_base, line[1][1][1])
       if os.path.exists(file_path):
@@ -24,35 +22,32 @@ def Extract(database):
         logging.warning(f'\033[93mMISSING!\033[0m {file_path}\033[K')
         database_music.append(file_path)
         database_music_missing.append(file_path)
-  database.update({'music': database_music})
-  database.update({'missing': database_music_missing})
-  return database
+  return database_music, database_music_missing
 
 
-def Folder(database):
-  self = database['music']
-  database_folder = database['folder']
+def Folder(data):
+  db_path = data['db_path']
   """Get all folders from files in database"""
   print('Finding music folder from files in database\033[K')
-  file_folders = set()
-  for file in self:
+  file_paths = set()
+  for file in data['db_music']:
     """Exclude recordings in _Serato_ folder"""
-    if database_folder not in file:
+    if db_path not in file:
       print(os.path.dirname(file), end='\033[K\r')
-      file_folders.add(os.path.dirname(file))
+      file_paths.add(os.path.dirname(file))
   print('\033[K')
-  file_folders = sorted(file_folders)
-  commonpath = os.path.commonpath(file_folders)
-  if commonpath in file_folders and len(re.findall(commonpath, str(file_folders))) == len(file_folders):
+  file_paths = sorted(file_paths)
+  commonpath = os.path.commonpath(file_paths)
+  if commonpath in file_paths and len(re.findall(commonpath, str(file_paths))) == len(file_paths):
     logging.info(f'Music location: {commonpath}')
-    database.update({'music_folder': commonpath})
-    return database
+    data['music_path'] = commonpath
+    return data
   else:
     """Search the parent of all folders and match to previous list"""
     folder_names = {}
-    for path in file_folders:
+    for path in file_paths:
       for root, dirs, files in os.walk(os.path.dirname(path)):
-        if len(dirs) > 1 and re.findall(root, str(file_folders)):
+        if len(dirs) > 1 and re.findall(root, str(file_paths)):
           logging.debug(f'Found music directory {root} with {len(dirs)} subdirectories')
           folder_names.update({root: len(dirs)})
   
@@ -61,13 +56,13 @@ def Folder(database):
     logging.debug(f'Found paths: {folder_names}')
 
     folder_check = []
-    for found_folder in folder_names:
-      folder_check.append(found_folder)
+    for found_path in folder_names:
+      folder_check.append(found_path)
 
     if folder_check[0] == os.path.commonpath(folder_check):
       logging.debug(f'Music location found: {folder_check[0]}')
-      database.update({'music_folder': list(folder_names)[0]})
-      return database
+      data['music_path'] = list(folder_names)[0]
+      return data
     else:
-      database.update({'music_folder': Select.Item(folder_names)})
-      return database
+      data['music_path'] = Select.Item(folder_names)
+      return data
