@@ -22,7 +22,6 @@ def Init(database):
 
 
 def Search(database):
-  temp_database = database['temp']
   music_folder = database['music_folder']
   database_music_missing = database['missing']
   database_decoded = database['decoded']

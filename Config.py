@@ -4,9 +4,6 @@ import Logger
 import Config
 import SeratoData
 import Music
-import Menu
-import Select
-import Crate
 
 
 def TerminalWidth():
@@ -23,8 +20,6 @@ def Dict():
   database.update({'binary': SeratoData.Read(database['location'])})
   database.update({'decoded': SeratoData.Decode(database['binary'])})
   Music.Extract(database)
-  # database.update({'music': database_music})
-  # database.update({'missing': database_music_missing})
   return database
 
 
@@ -58,7 +53,6 @@ def Get(database, section, option, default_value = ''):
 
 def Set(database, section, option, value):
   """Set config value and write to file"""
-  # database_folder = database['folder']
   config = database['config']
   if not config.has_section(section):
     config.add_section(section)

@@ -6,12 +6,7 @@ import SeratoData
 
 def Sync(database, rebuild = False):
   """Check for updates and apply if changes needed"""
-  database_folder = database['location']
-  music_folder = database['music_folder']
-  config = database['config']
-  database_music = database['music']
-  temp_database = Database.Temp.Create(database)
-  database.update({'temp': temp_database})
+  database.update({'temp': Database.Temp.Create(database)})
   crate_check, songs_new, songs_mod = Check(database, rebuild)
   print(f'\033[K')
   if crate_check > 0:
@@ -24,15 +19,13 @@ def Sync(database, rebuild = False):
   elif crate_check == 0:
     logging.info(f'\r\033[92mNo crate updates required\033[0m\033[K')
   time.sleep(1)
-  Database.Temp.Remove(temp_database)
+  Database.Temp.Remove(database['temp'])
 
 
 def Check(database, rebuild):
   temp_database = database['temp']
   music_folder = database['music_folder']
   config = database['config']
-  database_folder = database['folder']
-  database_music = database['music']
   """Check database against files and folders"""
   crate_updates = 0
   songs_new = 0

@@ -1,8 +1,5 @@
 import os, argparse, eyed3, time
-import Database
-import Logger
 import Config
-import SeratoData
 import Music
 import Menu
 import Select
@@ -21,7 +18,6 @@ def main():
   database = Config.Dict()
   if len(database['music']) > 0:
     Music.Folder(database)
-    # database.update({'music_folder': music_folder})
     while True:
       menu_input = Menu.Print(database)
       Menu.Action(menu_input, database)
