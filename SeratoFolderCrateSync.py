@@ -1,5 +1,5 @@
 import os, argparse, eyed3, time
-from modules import Dict, Music, Menu, Select, Crate
+from modules import Config, Music, Menu, Select, Crate
 
 
 def main():
@@ -11,7 +11,7 @@ def main():
     eyed3.log.setLevel("DEBUG")
   else:
     eyed3.log.setLevel('ERROR')
-  data = Dict.Build()
+  data = Config.Data()
   if len(data['db_music']) > 0:
     Music.Folder(data)
     while True:
