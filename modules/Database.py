@@ -115,18 +115,42 @@ def CheckTags(data):
     file_base = db_path.split('_Serato_')[0]
   else:
     file_base = '/'
-  for i, item in enumerate(database_decoded[1:]):
+  for i, item in reversed(list(enumerate(database_decoded[1:]))):
     item_filepath = file_base + item[1][1][1]
     item_title = item[1][2][1]
     item_artist = item[1][3][1]
     if os.path.exists(item_filepath):
       id3 = eyed3.load(item_filepath)
       if item_title != id3.tag.title:
-        logging.warning(f'{i}/{len(database_decoded) - 1} \033[93mTitle mismatch!\033[0m DB: {item_title}\t\033[96mID3: {id3.tag.title}\033[0m\tFile: {os.path.split(item_filepath)[-1]}')
+        logging.warning(f'{i}/{len(database_decoded) - 1} \033[93mTitle mismatch!\033[0m \033[96mFile:\033[0m {os.path.split(item_filepath)[-1]}\n\t\033[96mDB:\033[0m   {item_title}\n\t\033[96mID3:\033[0m  {id3.tag.title}')
+        UpdateTags(id3, data, i)
       elif item_artist != id3.tag.artist:
-        logging.warning(f'{i}/{len(database_decoded) - 1} \033[93mArtist mismatch!\033[0m DB: {item_artist}\t\033[96mID3: {id3.tag.artist}\033[0m\tFile: {os.path.split(item_filepath)[-1]}')
+        logging.warning(f'{i}/{len(database_decoded) - 1} \033[93mArtist mismatch!\033[0m \033[96mFile:\033[0m {os.path.split(item_filepath)[-1]}\n\t\033[96mDB:\033[0m   {item_artist}\n\t\033[96mID3:\033[0m  {id3.tag.artist}')
+        UpdateTags(id3, data, i)
       else:
         print(f'{i}/{len(database_decoded) - 1}', end='\r')
     else:
       logging.error(f'{i}/{len(database_decoded) - 1} \033[93mMISSING!\033[0m {item_filepath}')
   print('\033[K')
+
+
+def UpdateTags(id3, data, i):
+  db_path = data['db_path']
+  database_decoded = data['db_decoded']
+  """Check ID3 tags against Serato database"""
+  item = database_decoded[1:][i]
+  item_artist = item[1][3][1]
+  item_title = item[1][2][1]
+  ### WIP: Need to determine the best use case for this and how to do it.
+  while True:
+    selection = str(input('\nFix Serato [D]B or [I]D3? ').lower())
+    if selection == 'd':
+      item_artist = id3.tag.artist
+      item_title = id3.tag.title
+      break
+    elif selection == 'i':
+      id3.tag.artist = item_artist
+      id3.tag.title = item_title
+      id3.tag.save()
+      break
+
