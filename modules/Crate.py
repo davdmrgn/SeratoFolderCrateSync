@@ -8,9 +8,9 @@ def Sync(data, rebuild = False):
   crate_check, songs_new, songs_mod = Check(data, rebuild)
   print(f'\033[K')
   if crate_check > 0:
-    logging.info(f'  \033[92m+++\033[0m {songs_new} new song{"s" if songs_new == 1 else ""} to add')
-    logging.info(f'  \033[93m~~~\033[0m {songs_mod} existing song{"s" if songs_mod == 1 else ""} move into subcrate{"s" if songs_mod == 1 else ""}')
-    logging.info(f'      {crate_check} crate{"s" if crate_check == 1 else ""} to update')
+    logging.info(f'  \033[92m+++\033[0m {songs_new} new song{"" if songs_new == 1 else "s"} to add')
+    logging.info(f'  \033[93m~~~\033[0m {songs_mod} existing song{"" if songs_mod == 1 else "s"} move into subcrate{"" if songs_mod == 1 else "s"}')
+    logging.info(f'      {crate_check} crate{"" if crate_check == 1 else "s"} to update')
     apply = Database.Apply(data)
     if apply == True:
       logging.info(f'\033[92mSync done!\033[0m')
