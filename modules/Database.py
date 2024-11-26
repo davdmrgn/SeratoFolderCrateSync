@@ -98,7 +98,7 @@ def Apply(data):
   menu = str(input('\033[K\nEnter [y]es to apply changes: ').lower())
   if re.match('y|yes', menu.lower()):
     Backup(data)
-    logging.info(f'Moving temp database: {temp_database} to {db_path}')
+    logging.info(f'\033[96mMoving temp database\033[0m: {temp_database} to {db_path}')
     copy_ignore = shutil.ignore_patterns('DJ.INFO')
     shutil.copytree(temp_database, db_path, dirs_exist_ok=True, symlinks=True, ignore=copy_ignore)
     return True

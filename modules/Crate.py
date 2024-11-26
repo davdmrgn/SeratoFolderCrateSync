@@ -60,7 +60,7 @@ def Check(data, rebuild):
         songs_mod += crate_update[2]
     else:
       logging.info(f'Crate does not exist: {crate_path}')
-      crate_update = Build(crate_path, music_subfolder)
+      crate_update = Build(data, crate_path, music_subfolder)
       crate_updates += crate_update[0]
       songs_new += crate_update[1]
       songs_mod += crate_update[2]
