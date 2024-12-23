@@ -1,4 +1,4 @@
-import os, logging, shutil, re, time, eyed3
+import os, logging, shutil, re, time, eyed3, csv
 from datetime import datetime
 from modules import Select
 
@@ -154,3 +154,12 @@ def UpdateTags(id3, data, i):
       id3.tag.save()
       break
 
+def Export(data):
+  export_filename = f'{data['db_location']}-{datetime.now().strftime("%Y%m%d-%H%M%S")}.txt'
+  max_len = max(len(t) for t in data['db_decoded'])  # Find the maximum tuple length
+  logging.info(f'\033[96mExporting database in plain text to\033[0m: {export_filename}')
+  with open(export_filename, 'w', newline='') as f:
+    writer = csv.writer(f)
+    for row in data['db_decoded']:
+      padded_row = list(row) + [''] * (max_len - len(row))  # Pad with empty strings
+      writer.writerow(padded_row)

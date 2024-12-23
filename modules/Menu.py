@@ -63,6 +63,7 @@ def OptionsAdvanced(data):
   if len(database_music_missing) > 0:
     print('L. Locate lost files')
   print('U. Update music folder path in database')
+  print('E. Export database to plain text')
   selection = str(input('\nSelect an option: ').lower())
   return selection
 
@@ -89,6 +90,8 @@ def Action(selection, data):
     elif selection == 'u':
       ReplacePath.Find()
       sys.exit(0)
+    elif selection == 'e':
+      Database.Export(data)
   elif selection == 's':
     Crate.Sync(data)
     sys.exit(0)
@@ -102,5 +105,6 @@ def Action(selection, data):
   elif selection == 't':
     print('TEST AREA')
     time.sleep(2)
+
   else:
     time.sleep(1)
