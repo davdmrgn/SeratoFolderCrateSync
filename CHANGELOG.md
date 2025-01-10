@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.065
+- Add export database as plain text
+- Fix new crate build
+- Move code to modules
+- Miscellaneous fixes
+
+
 ## 0.064
 - Massive reorganization of code (functions, modules, variables, etc.)
 - Fix file chooser

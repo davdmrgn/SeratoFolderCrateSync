@@ -20,16 +20,9 @@ Syncrhonize music folders to Serato crates
 ## Usage
 
 - Open Terminal
-- Option 1:
   ```
-  python3 SeratoCrateFolderSync.command
+  python3 SeratoCrateFolderSync.py
   ```
-- Option 2:
-  ```
-  chmod +x SeratoCrateFolderSync.command
-  ./SeratoCrateFolderSync.command
-  ```
-  > Note: Option 2 may allow you to double-click the file from Finder to run.
 
 ## Limitations
 
