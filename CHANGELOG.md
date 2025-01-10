@@ -1,5 +1,15 @@
 # Change Log
 
+## 0.064
+- Massive reorganization of code (functions, modules, variables, etc.)
+- Fix file chooser
+
+## 0.063 - 2024-09-25
+- Add song counts
+- Update outputs
+- Relocate: Don't apply if no files found
+- No crates? No files? No database? No problem.
+
 ## [0.061](https://github.com/davdmrgn/SeratoFolderCrateSync/releases/tag/v0.061) - 2024-02-21
 - Relocate lost files added
 - Check/Compare ID3 tags of files against database
