@@ -2,7 +2,8 @@
 
 Syncrhonize music folders to Serato crates
 
-> I wrote this for me. YMMV
+> I wrote this for my own personal use. YMMV
+
 
 ## What does it do?
 
@@ -11,18 +12,22 @@ Syncrhonize music folders to Serato crates
 - _Relocate lost files_ like in Serato DJ.
 - Moved all your files from one directory to another? Relocate lost files taking too long? Find and replace against your database.
 
+
 ## Requirements
 
 - macOS (not tested on Windows)
 - Python 3
   > Python can be installed via Xcode Command Line Tools: `xcode-select --install`
 
+
 ## Usage
 
-- Open Terminal
+- Install Requirements
   ```
-  python3 SeratoCrateFolderSync.py
+  pip3 install -r requirements.txt
   ```
+- From Finder, double-click `SeratoCrateFolderSync.command` or from Terminal, run `SeratoCrateFolderSync.command`
+
 
 ## Limitations
 

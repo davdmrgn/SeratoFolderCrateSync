@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.066
+- Change .py to .command
+
 ## 0.065
 - Add export database as plain text
 - Fix new crate build
