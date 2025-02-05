@@ -28,13 +28,14 @@ def Find():
 
 class Temp:
   def Create(data):
-    db_path = data['db_path']
     """Copy database and work against a temporary copy"""
+    db_path = data['db_path']
     self = db_path + 'Temp'
+    logging.info(f'\033[96mCreating temporary database\033[0m: {self}')
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*', 'DJ.INFO')
     Temp.Remove(self)
     shutil.copytree(db_path, self, ignore=copy_ignore, symlinks=True)
-    logging.info(f'\033[96mCreating temporary database\033[0m: {self}')
+    data['db_temp'] = self
     return self
 
   def Remove(self):

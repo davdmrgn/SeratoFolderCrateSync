@@ -64,5 +64,5 @@ def Folder(data):
       data['music_path'] = list(folder_names)[0]
       return data
     else:
-      data['music_path'] = Select.Item(folder_names)
+      data['music_path'] = Select.Item(file_paths)
       return data

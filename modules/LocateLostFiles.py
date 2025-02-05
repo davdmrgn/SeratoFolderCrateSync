@@ -8,7 +8,7 @@ def Init(data):
     logging.info('\n\033[92mYou have no missing files in your library\033[0m')
   else:
     print(f'{len(database_music_missing)} missing file(s)')
-    data['db_temp'] = Database.Temp.Create(data)
+    Database.Temp.Create(data)
     Updates = Search(data)
     logging.info(f'\033[93m  {Updates} files found\033[0m\033[K')
     time.sleep(1)

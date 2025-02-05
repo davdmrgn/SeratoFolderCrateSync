@@ -82,13 +82,10 @@ def Action(selection, data):
     elif selection == 't':
       Database.CheckTags(data)
     elif selection == 'u':
-      ReplacePath.Find()
+      ReplacePath.Find(data)
       sys.exit(0)
     elif selection == 'l':
       LocateLostFiles.Init(data)
-      sys.exit(0)
-    elif selection == 'u':
-      ReplacePath.Find()
       sys.exit(0)
     elif selection == 'e':
       Database.Export(data)

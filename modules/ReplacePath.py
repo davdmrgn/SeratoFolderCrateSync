@@ -2,25 +2,26 @@ import logging, time, os, re
 from modules import Database, SeratoData, LocateLostFiles
 
 
-def Find(music_path):
+def Find(data):
   """Find folder path for music"""
+  music_path = data['music_path']
   logging.info(f'\n\n Music folder is: {music_path}')
   while True:
     find = str(input('\n Enter the portion of the path to replace: '))
     if len(find) > 1 and re.search(find, music_path):
       replace = str(input(' Enter the new replacement portion: '))
-      Replace(find, replace)
+      Replace(find, replace, data)
     else:
       logging.warning('Nope')
       time.sleep(1)
     break
 
 
-def Replace(find, replace, database_decoded):
+def Replace(find, replace, data):
   """Find and replace folder path for music"""
-  temp_database = Database.Temp.Create()
+  temp_database = Database.Temp.Create(data)
   """Database"""
-  database_replaced = LocateLostFiles.Replace(database_decoded, find, replace)
+  database_replaced = LocateLostFiles.Replace(data['db_decoded'], find, replace)
   database_replaced_encoded = SeratoData.Encode(database_replaced)
   temp_database_file = os.path.join(temp_database, 'database V2')
   logging.info('Updating database: ' + temp_database_file)
@@ -40,5 +41,5 @@ def Replace(find, replace, database_decoded):
         logging.debug('Updating Crate: ' + crate_fullpath)
         with open(crate_fullpath, 'w+b') as new_data:
           new_data.write(crate_replaced_encoded)
-  Database.Apply(temp_database)
-  Database.Temp.Remove(temp_database)
+  Database.Apply(data)
+  Database.Temp.Remove(data['db_temp'])

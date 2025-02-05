@@ -4,7 +4,7 @@ from modules import Database, Config, SeratoData
 
 def Sync(data, rebuild = False):
   """Check for updates and apply if changes needed"""
-  data['db_temp'] = Database.Temp.Create(data)
+  Database.Temp.Create(data)
   crate_check, songs_new, songs_mod = Check(data, rebuild)
   print(f'\033[K')
   if crate_check > 0:
