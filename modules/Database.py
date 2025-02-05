@@ -31,10 +31,10 @@ class Temp:
     db_path = data['db_path']
     """Copy database and work against a temporary copy"""
     self = db_path + 'Temp'
-    logging.debug(f'\033[96mCreate temporary database\033[0m: {self}')
     copy_ignore = shutil.ignore_patterns('.git*', 'Recording*', 'DJ.INFO')
     Temp.Remove(self)
     shutil.copytree(db_path, self, ignore=copy_ignore, symlinks=True)
+    logging.info(f'\033[96mCreating temporary database\033[0m: {self}')
     return self
 
   def Remove(self):
@@ -100,8 +100,19 @@ def Apply(data):
     Backup(data)
     logging.info(f'\033[96mMoving temp database\033[0m: {temp_database} to {db_path}')
     copy_ignore = shutil.ignore_patterns('DJ.INFO')
-    shutil.copytree(temp_database, db_path, dirs_exist_ok=True, symlinks=True, ignore=copy_ignore)
-    return True
+    retry_delay = 30
+    max_retries = 3
+    for attempt in range(max_retries):
+      try:
+        shutil.copytree(temp_database, db_path, dirs_exist_ok=True, symlinks=True, ignore=copy_ignore)
+        return True
+      except shutil.Error as e:
+        if "Operation timed out" in str(e):  # Check if it's specifically a timeout
+          print(f"Timeout error. Retrying in {retry_delay} seconds (attempt {attempt+1}/{max_retries})...")
+          time.sleep(retry_delay)
+        else:
+          print(f"A non-timeout error occurred: {e}")
+          raise
   else:
     logging.info(f'\033[93mNot applying changes!\033[0m')
     return False

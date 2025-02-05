@@ -85,7 +85,7 @@ def Action(selection, data):
       ReplacePath.Find()
       sys.exit(0)
     elif selection == 'l':
-      LocateLostFiles.Init()
+      LocateLostFiles.Init(data)
       sys.exit(0)
     elif selection == 'u':
       ReplacePath.Find()

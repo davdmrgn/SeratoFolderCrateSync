@@ -4,7 +4,7 @@ from modules import Config
 
 def Read(self):
   """Open database file and return the binary data"""
-  print(f'Reading Serato {"crate" if self.endswith("crate") else "database"} file: {self}', end='\033[K\r')
+  # print(f'Reading Serato {"crate" if self.endswith("crate") else "database"} file: {self}', end='\033[K\r')
   with open(self, 'rb') as data:
     binary = data.read()
   return binary
@@ -30,7 +30,7 @@ def Decode(self):
         value_str = value[0][1]
       else:
         value_str = value
-      print(f'Decoding {len(output)}: {value_str[:Config.TerminalWidth()]}', end='\033[K\r')
+      # print(f'Decoding {len(output)}: {value_str[:Config.TerminalWidth()]}', end='\033[K\r')
     elif re.match('(?!^u|^s|^b|^r)' , key):
       value = value_binary.decode('utf-16-be')
     else:
@@ -51,10 +51,10 @@ def Encode(self):
       value_binary = value.encode('utf-16-be')
     elif re.match('^o', key):
       o_values = line[1]
-      if len(o_values) > 2:
-        print(f'Encoding {i}: {o_values[1][1][:Config.TerminalWidth()]}', end='\033[K\r')
-      elif len(o_values) == 1:
-        print(f'Encoding {i}: {o_values[0][1][:Config.TerminalWidth()]}', end='\033[K\r')
+      # if len(o_values) > 2:
+      #   print(f'Encoding {i}: {o_values[1][1][:Config.TerminalWidth()]}', end='\033[K\r')
+      # elif len(o_values) == 1:
+      #   print(f'Encoding {i}: {o_values[0][1][:Config.TerminalWidth()]}', end='\033[K\r')
       value_binary = b''
       for line in o_values:
         o_key = line[0]
@@ -68,5 +68,5 @@ def Encode(self):
         value_binary += (o_key_binary + o_length_binary + o_value_binary)
     length_binary = struct.pack('>I', len(value_binary))
     output.write(key_binary + length_binary + value_binary)
-  print('Encode complete', end='\033[K\r')
+  # print('Encode complete', end='\033[K\r')
   return output.getvalue()
